@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>考评审核系统 v4</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f5f5f5; color:#333; padding-bottom:80px; }
+        .header { background:linear-gradient(135deg,#1a73e8,#0d47a1); color:#fff; padding:16px; text-align:center; position:sticky; top:0; z-index:100; }
+        .header h1 { font-size:18px; font-weight:600; }
+        .header .sub { font-size:12px; opacity:0.8; margin-top:4px; }
+        .container { padding:12px; max-width:800px; margin:0 auto; }
+        .step { display:none; }
+        .step.active { display:block; }
+        .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+        .card-title { font-size:16px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+        .upload-area { border:2px dashed #ccc; border-radius:12px; padding:24px; text-align:center; cursor:pointer; transition:all 0.3s; }
+        .upload-area:hover { border-color:#1a73e8; background:#f0f7ff; }
+        .upload-area.uploaded { border-color:#34a853; background:#f0fdf0; }
+        .upload-area .icon { font-size:36px; margin-bottom:8px; }
+        .upload-area .text { font-size:14px; color:#666; }
+        .upload-area .filename { font-size:13px; color:#34a853; margin-top:4px; font-weight:500; }
+        .upload-area input { display:none; }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px 24px; border:none; border-radius:8px; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+        .btn-primary { background:#1a73e8; color:#fff; }
+        .btn-success { background:#34a853; color:#fff; }
+        .btn-outline { background:#fff; color:#1a73e8; border:1px solid #1a73e8; }
+        .btn-full { width:100%; }
+        
+        .inv-item { background:#fff; border-radius:12px; padding:14px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #e0e0e0; }
+        .inv-item.has-diff { border-left-color:#ea4335; }
+        .inv-item.no-diff { border-left-color:#34a853; }
+        .inv-item .name-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+        .inv-item .name { font-size:15px; font-weight:600; }
+        .inv-item .cat-tag { font-size:11px; padding:2px 8px; border-radius:10px; }
+        .inv-item .unit-convert { font-size:11px; color:#1a73e8; background:#e8f0fe; padding:2px 8px; border-radius:10px; margin-left:4px; }
+        .inv-item .sales-info { font-size:12px; color:#5f6368; margin-bottom:8px; background:#f8f9fa; padding:6px 10px; border-radius:6px; }
+        .inv-item .data-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; }
+        .inv-item .data-cell { background:#f8f9fa; padding:8px 4px; border-radius:8px; text-align:center; }
+        .inv-item .data-cell .label { font-size:10px; color:#666; }
+        .inv-item .data-cell .value { font-size:15px; font-weight:600; margin-top:2px; }
+        .inv-item .data-cell .sub { font-size:10px; color:#999; }
+        .inv-item .data-cell.theory { background:#e8f0fe; }
+        .inv-item .data-cell.theory .value { color:#1a73e8; }
+        .inv-item .actual-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .inv-item .actual-row label { font-size:13px; color:#333; white-space:nowrap; font-weight:500; }
+        .inv-item .actual-row input { flex:1; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px; text-align:center; }
+        .inv-item .actual-row input:focus { border-color:#1a73e8; outline:none; }
+        .inv-item .actual-row .unit-hint { font-size:12px; color:#666; white-space:nowrap; }
+        .inv-item .actual-row .vbtn { width:44px; height:44px; border-radius:50%; border:none; font-size:18px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+        .inv-item .actual-row .vbtn.voice { background:#1a73e8; color:#fff; }
+        .inv-item .actual-row .vbtn.voice.recording { background:#ea4335; animation:pulse 1s infinite; }
+        .inv-item .diff-tag { padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; text-align:center; }
+        .inv-item .diff-tag.pos { background:#e6f4ea; color:#137333; }
+        .inv-item .diff-tag.neg { background:#fce8e6; color:#c5221f; }
+        .inv-item .diff-tag.zero { background:#f8f9fa; color:#34a853; }
+        
+        .reason-box { margin-top:8px; padding:10px; background:#fff8e1; border-radius:8px; }
+        .reason-box select, .reason-box textarea { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; margin-bottom:6px; }
+        .reason-box textarea { min-height:36px; resize:none; }
+        
+        .sum-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f0f0f0; }
+        .sum-row:last-child { border-bottom:none; }
+        .sum-row .val { font-weight:600; }
+        .sum-row .val.red { color:#c5221f; }
+        .sum-row .val.green { color:#137333; }
+        
+        .progress-bar { background:#e0e0e0; border-radius:8px; height:6px; overflow:hidden; margin:8px 0; }
+        .progress-bar .fill { height:100%; background:linear-gradient(90deg,#1a73e8,#34a853); transition:width 0.3s; }
+        
+        .nav-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #e0e0e0; padding:10px 16px; display:flex; gap:10px; z-index:100; }
+        .nav-bar .btn { flex:1; }
+        
+        .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:12px 24px; border-radius:8px; z-index:1000; display:none; font-size:14px; }
+        .toast.show { display:block; }
+        
+        .voice-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:500; display:none; align-items:center; justify-content:center; }
+        .voice-overlay.active { display:flex; }
+        .voice-dialog { background:#fff; border-radius:16px; padding:20px; width:90%; max-width:400px; max-height:80vh; overflow-y:auto; }
+        .voice-dialog h3 { font-size:16px; margin-bottom:12px; text-align:center; }
+        .voice-dialog .voice-input { width:100%; padding:12px; border:2px solid #1a73e8; border-radius:8px; font-size:16px; margin-bottom:12px; }
+        .voice-dialog .match-list { max-height:200px; overflow-y:auto; }
+        .voice-dialog .match-item { padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; }
+        .voice-dialog .match-item:hover { background:#e8f0fe; }
+        
+        .convert-info { background:#e8f0fe; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:13px; color:#1a73e8; }
+        .convert-info b { color:#0d47a1; }
+        
+        .store-select { width:100%; padding:12px 16px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px; appearance:none; -webkit-appearance:none; background:#fff url('data:image/svg+xml;utf8,<svg fill="gray" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 12px center; }
+        .store-select:focus { border-color:#1a73e8; outline:none; }
+        .store-info { margin-top:10px; padding:10px 14px; background:#e8f0fe; border-radius:8px; font-size:13px; color:#1a73e8; }
+        
+        .unmatched-warn { background:#fff8e1; border-radius:8px; padding:10px 14px; margin-top:8px; font-size:12px; color:#ea8600; }
+        
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        @media(max-width:480px) {
+            .inv-item .data-grid { grid-template-columns:repeat(4,1fr); gap:4px; }
+            .inv-item .data-cell .value { font-size:13px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 考评审核系统</h1>
+        <div class="sub" id="headerSub">步骤 1/5：选择门店</div>
+    </div>
+
+    <div class="container">
+        <!-- Step 1: Select Store -->
+        <div class="step active" id="step1">
+            <div class="card">
+                <div class="card-title">🏪 选择门店</div>
+                <select class="store-select" id="storeSelect" onchange="onStoreChange()">
+                    <option value="">-- 请选择门店 --</option>
+                </select>
+                <div id="storeInfo" class="store-info" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Upload -->
+        <div class="step" id="step2">
+            <div class="card">
+                <div class="card-title">📦 上传物料收发汇总表</div>
+                <div class="upload-area" id="uploadInv" onclick="document.getElementById('invFile').click()">
+                    <div class="icon">📁</div>
+                    <div class="text">点击上传物料收发汇总表</div>
+                    <div class="filename" id="invFileName"></div>
+                    <input type="file" id="invFile" accept=".xlsx,.xls" onchange="handleInvUpload(this)">
+                </div>
+                <div id="invInfo" style="margin-top:10px;font-size:13px;color:#666;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📊 上传菜品销售数据</div>
+                <div class="upload-area" id="uploadSales" onclick="document.getElementById('salesFile').click()">
+                    <div class="icon">📁</div>
+                    <div class="text">点击上传菜品销售统计</div>
+                    <div class="filename" id="salesFileName"></div>
+                    <input type="file" id="salesFile" accept=".xlsx,.xls" onchange="handleSalesUpload(this)">
+                </div>
+                <div id="salesInfo" style="margin-top:10px;font-size:13px;color:#666;"></div>
+            </div>
+            <div id="convertSummary" style="display:none;" class="card">
+                <div class="card-title">🔄 单位换算说明</div>
+                <div id="convertList"></div>
+            </div>
+            <div id="unmatchedWarn" style="display:none;" class="card">
+                <div class="card-title">⚠️ 未匹配菜品</div>
+                <div id="unmatchedList"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Input actual counts -->
+        <div class="step" id="step3">
+            <div class="card">
+                <div class="card-title">📝 录入实际盘点数</div>
+                <div style="font-size:13px;color:#666;margin-bottom:4px;">输入每项实际盘点数量（已自动换算为最小单位），系统自动计算差异</div>
+                <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+                <div style="font-size:12px;color:#999;margin-bottom:12px;" id="progressText">已完成 0/0</div>
+                <div id="invList"></div>
+            </div>
+        </div>
+
+        <!-- Step 4: Review -->
+        <div class="step" id="step4">
+            <div class="card">
+                <div class="card-title">📊 考评结果汇总</div>
+                <div id="storeLabel" style="font-size:14px;color:#1a73e8;font-weight:600;margin-bottom:12px;"></div>
+                <div id="resultSummary"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">⚠️ 差异项 - 填写原因</div>
+                <div id="diffList"></div>
+            </div>
+        </div>
+
+        <!-- Step 5: Export -->
+        <div class="step" id="step5">
+            <div class="card">
+                <div class="card-title">✅ 导出考评结果</div>
+                <div style="font-size:14px;color:#666;margin-bottom:16px;">结果已生成，点击导出Excel文件。</div>
+                <button class="btn btn-success btn-full" onclick="exportResult()">📥 导出Excel</button>
+                <div style="margin-top:16px;">
+                    <button class="btn btn-outline btn-full" onclick="goToStep(3)">📝 返回修改盘点数</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar" id="navBar">
+        <button class="btn btn-outline" id="btnPrev" onclick="prevStep()" style="display:none">上一步</button>
+        <button class="btn btn-primary" id="btnNext" onclick="nextStep()">下一步</button>
+    </div>
+
+    <!-- Voice overlay -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <div class="voice-dialog">
+            <h3 id="voiceTitle">🎤 语音输入</h3>
+            <input class="voice-input" id="voiceInput" placeholder="输入数字或语音识别..." oninput="onVoiceInput()">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button class="btn btn-primary" style="flex:1;" id="voiceRecBtn" onclick="toggleRecord()">🎤 开始录音</button>
+                <button class="btn btn-outline" onclick="closeVoice()">关闭</button>
+            </div>
+            <div class="match-list" id="voiceMatchList"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    // ========== ALL STORES MAPPING DATA ==========
+    const ALL_STORES = {
+        "卤校长老火锅（观音桥店）": [
+            {"dish":"冷锅血","material":"鲜血"},{"dish":"乐堡","material":"乐堡"},{"dish":"国宾","material":"醇国宾"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花（件）"},{"dish":"纯生","material":"重啤纯生"},
+            {"dish":"农夫山泉","material":"农夫山泉"},{"dish":"听装可乐","material":"可口可乐（330ml）"},{"dish":"王老吉","material":"凉茶王老吉"},
+            {"dish":"唯怡","material":"唯怡245ml"},{"dish":"大窑橙诺","material":"大窑橙汁（480ml/瓶）"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"听装雪碧","material":"雪碧（330ml）"},{"dish":"大唯怡","material":"唯怡E90"},{"dish":"乐堡Pro","material":"乐堡PRO"},
+            {"dish":"酸梅汤","material":"桂花酸梅汤"},{"dish":"白啤","material":"精酿白啤"},{"dish":"椰奶","material":"椰奶245ml"},
+            {"dish":"乐堡精酿","material":"乐堡精酿1L"},{"dish":"小郎酒","material":"郎酒100ml"},{"dish":"可乐（收藏打卡）","material":"可口可乐（330ml）"},
+            {"dish":"国宾精酿","material":"国宾精酿（重庆）"},{"dish":"天山鲜果庄园橙味","material":"天山鲜果庄园"},
+            {"dish":"天山鲜果庄园水蜜桃","material":"天山鲜果庄园"},{"dish":"光明酸奶458ml","material":"光明酸奶look"},
+            {"dish":"雪碧（收藏打卡）","material":"雪碧（330ml）"}
+        ],
+        "卤校长老火锅(沙坪坝店)": [
+            {"dish":"冷锅血","material":"鲜血"},{"dish":"乐堡","material":"乐堡"},{"dish":"国宾","material":"醇国宾"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花（件）"},{"dish":"打卡小可乐","material":"收藏打卡可乐"},
+            {"dish":"纯生","material":"重啤纯生"},{"dish":"农夫山泉","material":"农夫山泉"},{"dish":"打卡小雪碧","material":"收藏打卡雪碧"},
+            {"dish":"品相网料","material":"网店底料500g(卤校长)"},{"dish":"王老吉","material":"凉茶王老吉"},
+            {"dish":"网料","material":"网店底料500g(卤校长)"},{"dish":"听装可乐","material":"听装可乐"},
+            {"dish":"唯怡","material":"唯怡245ml"},{"dish":"大可乐","material":"百事可乐2L"},{"dish":"酸梅汤","material":"桂花酸梅汤"},
+            {"dish":"大窑橙诺","material":"大窑橙汁（480ml/瓶）"},{"dish":"北冰洋","material":"北冰洋"},{"dish":"大唯怡","material":"唯怡E90"},
+            {"dish":"乐堡小麦精酿","material":"乐堡精酿1L"},{"dish":"国宾精酿","material":"国宾精酿（重庆）"},
+            {"dish":"小郎酒","material":"郎酒100ml"},{"dish":"网料（员工）","material":"网店底料500g(卤校长)"},
+            {"dish":"冷锅血1","material":"鲜血"},{"dish":"大七喜","material":"大雪碧"},
+            {"dish":"收藏打卡听装可乐","material":"收藏打卡可乐"},{"dish":"梅见青梅酒","material":"梅见青梅酒-江小白330ml"},
+            {"dish":"光明酸奶","material":"光明酸奶look"},{"dish":"天山鲜果庄园橙味","material":"天山鲜果庄园"},
+            {"dish":"乐堡PRO","material":"乐堡PRO"}
+        ],
+        "耙二哥腰片王老火锅（双碑店）": [
+            {"dish":"乐堡","material":"乐堡"},{"dish":"冷锅血","material":"鲜血"},{"dish":"国宾","material":"醇国宾"},
+            {"dish":"纯生","material":"重啤纯生"},{"dish":"脑花","material":"脑花（件）"},{"dish":"矿泉水500ml","material":"农夫山泉"},
+            {"dish":"加多宝","material":"加多宝凉茶（红罐）"},{"dish":"网料","material":"网店底料500g(耙二哥)"},
+            {"dish":"小唯怡245ml","material":"唯怡245ml"},{"dish":"大窑橙诺","material":"大窑橙汁（480ml/瓶）"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"金鲳鱼","material":"夜埕金鲳鱼"},{"dish":"大唯怡","material":"唯怡E90"},
+            {"dish":"听装百事可乐","material":"百事可乐（听装)"},{"dish":"无糖加多宝","material":"无糖加多宝"},
+            {"dish":"听装可口可乐","material":"可口可乐（听装）"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"光明酸奶","material":"光明酸奶look"},{"dish":"雪碧（听装）","material":"雪碧（听装）"},
+            {"dish":"可口可乐2L","material":"可口可乐2L"},{"dish":"小麦白","material":"重啤小麦白"},
+            {"dish":"鲜橙多","material":"统一鲜橙多橙汁1.5L"},{"dish":"雪碧 （2L）","material":"雪碧2L"},
+            {"dish":"乐堡小麦精酿","material":"乐堡精酿1L"},{"dish":"百事可乐2L","material":"百事可乐2L"},
+            {"dish":"乐堡PRO","material":"乐堡PRO"},{"dish":"网料25","material":"网店底料500g(耙二哥)"},
+            {"dish":"国宾精酿","material":"国宾精酿（重庆）"},{"dish":"郎酒100ml","material":"郎酒100ml"},
+            {"dish":"劲酒（125ml）","material":"劲酒125ml"},{"dish":"五粮液歪100ml","material":"五粮液歪嘴100ml"},
+            {"dish":"蓝顺郎酒","material":"蓝顺郎酒"},{"dish":"五粮液歪500ml","material":"五粮液歪嘴450ml"}
+        ],
+        "耙二哥腰片王老火锅（新牌坊店）": [
+            {"dish":"乐堡","material":"乐堡"},{"dish":"冷锅血","material":"鲜血"},{"dish":"纯生","material":"重啤纯生"},
+            {"dish":"矿泉水500ml","material":"农夫山泉"},{"dish":"国宾","material":"醇国宾"},{"dish":"王老吉","material":"凉茶王老吉"},
+            {"dish":"脑花","material":"脑花（件）"},{"dish":"小唯怡245ml","material":"唯怡245ml"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"听装可乐（打卡收藏）","material":"可口可乐（听装）"},
+            {"dish":"听装可口可乐","material":"可口可乐（听装）"},{"dish":"小麦白","material":"重啤小麦白"},
+            {"dish":"北冰洋","material":"北冰洋"},{"dish":"乐堡PRO","material":"乐堡PRO"},{"dish":"大唯怡","material":"唯怡E90"},
+            {"dish":"光明酸奶","material":"光明酸奶look"},{"dish":"乐堡小麦精酿","material":"乐堡精酿1L"},
+            {"dish":"听装雪碧（打卡收藏）","material":"雪碧（听装）"},{"dish":"郎酒100ml","material":"郎酒100ml"},
+            {"dish":"可口可乐2L","material":"可口可乐2L"},{"dish":"金鲳鱼","material":"夜埕金鲳鱼"},
+            {"dish":"雪碧（听装）","material":"雪碧（听装）"},{"dish":"雪碧 （2L）","material":"雪碧2L"},
+            {"dish":"劲酒（125ml）","material":"劲酒125ml"},{"dish":"天山果园橙汁汽水","material":"天山鲜果庄园"},
+            {"dish":"国宾精酿","material":"国宾精酿（重庆）"}
+        ],
+        "萍姐火锅·公路夜市（总店）": [
+            {"dish":"冷锅血","material":"鲜血"},{"dish":"雪花纯生","material":"雪花金标纯生（成都）"},
+            {"dish":"矿泉水","material":"农夫山泉"},{"dish":"猪脑花（1个）","material":"脑花"},
+            {"dish":"网料","material":"网店底料500g（萍姐）"},{"dish":"小唯怡","material":"唯怡245ml"},
+            {"dish":"小可乐（罐）","material":"可口可乐（330ml）"},{"dish":"雪花精酿1L","material":"夺命老雪花1L"},
+            {"dish":"王老吉（听）","material":"凉茶王老吉"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"喜力星银330ml","material":"喜力星银"},{"dish":"小雪碧（罐）","material":"雪碧（330ml）"},
+            {"dish":"马尔斯绿","material":"雪花马尔斯绿（成都）"},{"dish":"匠心营造","material":"雪花匠心营造（成都）"},
+            {"dish":"雪花脸谱","material":"雪花花脸（成都）"},{"dish":"雪花花旦","material":"雪花花旦（成都）"},
+            {"dish":"小歪郎","material":"郎酒100ml"}
+        ],
+        "萍姐重庆店": [
+            {"dish":"冷锅血","material":"鲜血"},{"dish":"矿泉水","material":"农夫山泉"},{"dish":"乐堡","material":"乐堡"},
+            {"dish":"网料","material":"网店底料500g（萍姐）"},{"dish":"猪脑花（1个）","material":"脑花（件）"},
+            {"dish":"醇国宾","material":"醇国宾"},{"dish":"可口可乐330ml","material":"可口可乐（听装）"},
+            {"dish":"小唯怡","material":"唯怡245ml"},{"dish":"重庆纯生","material":"重啤纯生"},
+            {"dish":"北冰洋","material":"北冰洋"},{"dish":"王老吉（听）","material":"凉茶王老吉"},
+            {"dish":"雪碧330ml","material":"雪碧（听装）"},{"dish":"乐堡小麦精酿","material":"乐堡精酿1L"},
+            {"dish":"国宾精酿","material":"国宾精酿（重庆）"},{"dish":"小歪郎","material":"郎酒100ml"},
+            {"dish":"天山鲜果庄园","material":"天山果园汽水"},{"dish":"网料（员工）","material":"网店底料500g（萍姐）"},
+            {"dish":"乐堡PRO","material":"乐堡PRO"}
+        ],
+        "四民老火锅（观音桥店）": [
+            {"dish":"乐堡","material":"乐堡"},{"dish":"鲜血","material":"鲜血"},{"dish":"醇国宾","material":"醇国宾"},
+            {"dish":"脑花","material":"脑花（件）"},{"dish":"纯生","material":"重啤纯生"},
+            {"dish":"矿泉水","material":"娃哈哈纯净水"},{"dish":"王老吉","material":"加多宝"},
+            {"dish":"小唯怡","material":"唯怡245ml"},{"dish":"红糖糍粑","material":"红糖糍粑"},
+            {"dish":"北冰洋","material":"北冰洋"},{"dish":"小可口可乐","material":"可口可乐（330ml）"},
+            {"dish":"大雪碧","material":"1.25L雪碧"},{"dish":"大可口可乐","material":"1.25L可口可乐"},
+            {"dish":"酸梅汁","material":"桂花酸梅汤"},{"dish":"小雪碧","material":"雪碧（330ml）"},
+            {"dish":"大唯怡","material":"唯怡E90"},{"dish":"二两郎酒","material":"郎酒100ml"},
+            {"dish":"矿泉水（加微信）","material":"娃哈哈纯净水"},{"dish":"可乐（加微信）","material":"可口可乐（330ml）"},
+            {"dish":"小雪碧（加微信）","material":"雪碧（330ml）"},{"dish":"白啤","material":"精酿白啤"},
+            {"dish":"椰奶","material":"椰奶245ml"}
+        ],
+        "西安长安亭万象城": [
+            {"dish":"可乐","material":"可口可乐（听装）"},{"dish":"怡宝","material":"怡宝矿泉水"},
+            {"dish":"青岛纯生","material":"青岛纯生"},{"dish":"冰峰汽水","material":"冰峰330ml"},
+            {"dish":"雪碧","material":"雪碧（330ml）"},{"dish":"加多宝","material":"无糖加多宝"},
+            {"dish":"椰汁","material":"椰奶245ml"}
+        ],
+        "杨老头老烧烤（重庆首店）": [
+            {"dish":"乐堡","material":"乐堡495ml（重庆）"},{"dish":"矿泉水","material":"农夫山泉"},
+            {"dish":"纯生","material":"雪花纯生"},{"dish":"国宾","material":"醇国宾"},
+            {"dish":"小唯一","material":"唯怡245ml"},{"dish":"加多宝","material":"加多宝"},
+            {"dish":"听装可乐","material":"可口可乐（330ml）"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"精酿白啤","material":"精酿白啤"},{"dish":"听装雪碧","material":"雪碧（330ml）"},
+            {"dish":"光明酸奶","material":"光明酸奶look"},{"dish":"天山鲜果庄园","material":"天山鲜果庄园"},
+            {"dish":"乐宝精良","material":"乐堡精酿1L"},{"dish":"全麦精酿","material":"全麦精酿701"},
+            {"dish":"五粮液歪嘴","material":"五粮液歪嘴100ml"},{"dish":"国宾精酿","material":"国宾精酿（重庆）"},
+            {"dish":"大唯一","material":"唯怡E90"},{"dish":"小劲酒","material":"劲酒125ml"},
+            {"dish":"小梅见","material":"梅见青梅酒-江小白330ml"},{"dish":"小郎酒","material":"郎酒100ml"}
+        ],
+        "杨老头鲜货烧烤（双桂路店）": [
+            {"dish":"纯生","material":"雪花金标纯生（成都）"},{"dish":"可乐","material":"可口可乐（330ml）"},
+            {"dish":"小唯怡","material":"唯怡245ml"},{"dish":"矿泉水","material":"农夫山泉"},
+            {"dish":"喜力  星银","material":"喜力星银"},{"dish":"雪碧","material":"雪碧（330ml）"},
+            {"dish":"北冰洋","material":"北冰洋"},{"dish":"雪花精酿","material":"夺命老雪花1L"},
+            {"dish":"王老吉","material":"凉茶王老吉"},{"dish":"老雪花","material":"夺命老雪花"},
+            {"dish":"马尔斯绿","material":"雪花马尔斯绿（成都）"},{"dish":"雪花  花脸","material":"雪花花脸（成都）"},
+            {"dish":"大唯怡","material":"唯怡E90"},{"dish":"小郎酒","material":"郎酒100ml"},
+            {"dish":"椰奶","material":"黄金椰汁"},{"dish":"匠心","material":"雪花匠心营造（成都）"},
+            {"dish":"无糖王老吉","material":"凉茶无糖王老吉"},{"dish":"雪花  花旦","material":"雪花花旦（成都）"}
+        ],
+        "杨老头鲜货烧烤（太古里店）": [
+            {"dish":"雪花金标纯生(500ml)","material":"雪花金标纯生（成都）"},{"dish":"小唯怡","material":"唯怡245ml"},
+            {"dish":"怡寶","material":"怡宝矿泉水"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"喜力 星银（330ml）","material":"喜力星银"},{"dish":"老雪花(640ml)","material":"夺命老雪花"},
+            {"dish":"可口可乐","material":"可口可乐（330ml）"},{"dish":"王老吉","material":"凉茶王老吉"},
+            {"dish":"雪碧","material":"雪碧（330ml）"},{"dish":"雪花精酿（1L）","material":"夺命老雪花1L"},
+            {"dish":"大唯怡","material":"唯怡E90"},{"dish":"雪花马尔斯绿(455ml)","material":"雪花马尔斯绿（成都）"},
+            {"dish":"雪花花脸(418ml)","material":"雪花花脸（成都）"},{"dish":"无糖王老吉","material":"凉茶无糖王老吉"},
+            {"dish":"雪花匠心营造(500ml)","material":"雪花匠心营造（成都）"},{"dish":"雪花花旦(418ml)","material":"雪花花旦（成都）"}
+        ],
+        "杨老头鲜货烧烤（万象城店）": [
+            {"dish":"雪花金标纯生(500ml)","material":"雪花金标纯生（成都）"},{"dish":"小唯怡","material":"唯怡245ml"},
+            {"dish":"北冰洋","material":"北冰洋"},{"dish":"怡寶","material":"怡宝矿泉水"},
+            {"dish":"可口可乐","material":"可口可乐（330ml）"},{"dish":"老雪花(640ml)","material":"夺命老雪花"},
+            {"dish":"喜力 星银（330ml）","material":"喜力星银"},{"dish":"王老吉","material":"凉茶王老吉"},
+            {"dish":"雪花马尔斯绿(455ml)","material":"雪花马尔斯绿（成都）"},{"dish":"雪碧","material":"雪碧（330ml）"},
+            {"dish":"雪花精酿（1L）","material":"夺命老雪花1L"},{"dish":"大唯怡","material":"唯怡E90"},
+            {"dish":"无糖王老吉","material":"凉茶无糖王老吉"},{"dish":"雪花花旦(418ml)","material":"雪花花旦（成都）"},
+            {"dish":"雪花花脸(418ml)","material":"雪花花脸（成都）"},{"dish":"雪花匠心营造(500ml)","material":"雪花匠心营造（成都）"}
+        ],
+        "杨老头鲜货烧烤（玉双路店）": [
+            {"dish":"纯生","material":"雪花金标纯生（成都）"},{"dish":"矿泉水","material":"农夫山泉"},
+            {"dish":"小唯怡豆奶","material":"唯怡245ml"},{"dish":"北冰洋","material":"北冰洋"},
+            {"dish":"可乐","material":"可口可乐（330ml）"},{"dish":"老雪花","material":"夺命老雪花"},
+            {"dish":"王老吉","material":"凉茶王老吉"},{"dish":"喜力","material":"喜力星银"},
+            {"dish":"马尔斯绿","material":"雪花马尔斯绿（成都）"},{"dish":"雪碧","material":"雪碧（330ml）"},
+            {"dish":"雪花精酿","material":"夺命老雪花1L"},{"dish":"椰树椰汁","material":"黄金椰汁"},
+            {"dish":"匠心","material":"雪花匠心营造（成都）"},{"dish":"歪嘴","material":"郎酒100ml"}
+        ],
+        "长安亭院火锅（深圳店）": [
+            {"dish":"可口可乐(罐)","material":"可口可乐（330ml）"},{"dish":"加多宝(罐)","material":"加多宝"},
+            {"dish":"百威纯生500ml","material":"百威纯生500ml"},{"dish":"怡宝","material":"怡宝矿泉水"},
+            {"dish":"脑花","material":"脑花"},{"dish":"蓝妹啤酒640ml","material":"蓝妹啤酒（640毫升）"},
+            {"dish":"百威啤酒500ml","material":"百威纯生500ml"},{"dish":"百威啤酒418ml","material":"百威纯生"},
+            {"dish":"百威黑金精酿1l","material":"百威黑金1L听装"},{"dish":"科罗娜特级啤酒300ml","material":"科罗娜小瓶300ml"},
+            {"dish":"雪碧(罐)","material":"雪碧（330ml）"},{"dish":"唯怡豆奶(瓶)","material":"唯怡245ml"},
+            {"dish":"蓝妹啤酒","material":"蓝妹啤酒（640毫升）"},{"dish":"百威纯生","material":"百威纯生"},
+            {"dish":"小郎酒","material":"45°小郎酒（银标）100ml"},{"dish":"科罗娜特级啤酒","material":"科罗娜小瓶300ml"},
+            {"dish":"大颗粒午餐肉","material":"火腿猪肉罐头"},{"dish":"广式甜香肠","material":"广味小香肠"},
+            {"dish":"南川方竹笋","material":"笋片"}
+        ]
+    };
+
+    // ========== DATA ==========
+    let selectedStore = '';
+    let currentMapping = {};  // {菜品名: 系统物料名}
+    let invData = [];
+    let salesRaw = [];
+    let unmatchedDishes = [];  // 销售数据中未匹配的菜品
+    let currentStep = 1;
+    let currentVoiceIdx = null;
+    let recognition = null;
+    let voiceApiOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    // ========== INIT ==========
+    function init() {
+        const sel = document.getElementById('storeSelect');
+        Object.keys(ALL_STORES).forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = `${name} (${ALL_STORES[name].length}条映射)`;
+            sel.appendChild(opt);
+        });
+    }
+    init();
+
+    // ========== UNIT CONVERSION ==========
+    function parseSpec(spec) {
+        if (!spec) return null;
+        const matches = [...spec.matchAll(/(\d+)\s*([\u4e00-\u9fff]+)\s*\/\s*件/g)];
+        if (matches.length > 0) {
+            const last = matches[matches.length - 1];
+            return { ratio: parseInt(last[1]), smallUnit: last[2], bigUnit: '件' };
+        }
+        return null;
+    }
+
+    // ========== STEP 1: STORE SELECT ==========
+    function onStoreChange() {
+        const store = document.getElementById('storeSelect').value;
+        if (!store) {
+            document.getElementById('storeInfo').style.display = 'none';
+            return;
+        }
+        selectedStore = store;
+        const mappings = ALL_STORES[store];
+        currentMapping = {};
+        mappings.forEach(m => { currentMapping[m.dish] = m.material; });
+        
+        const info = document.getElementById('storeInfo');
+        info.style.display = '';
+        info.innerHTML = `✅ 已选择 <b>${store}</b>，加载了 <b>${mappings.length}</b> 条菜品→物料映射关系`;
+    }
+
+    // ========== STEP 2: UPLOAD ==========
+    function handleInvUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('invFileName').textContent = file.name;
+        document.getElementById('uploadInv').classList.add('uploaded');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const wb = XLSX.read(e.target.result, {type:'array'});
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+                
+                // 动态查找表头行和列位置
+                let invHeaderIdx = -1;
+                let codeCol = 0, nameCol = 1, specCol = 2, catCol = 3, unitCol = 7;
+                let initCol = 8, incomeCol = 9, balanceCol = 11;
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    const r = rows[i];
+                    if (!r) continue;
+                    const cells = r.map(c => String(c||'').replace(/\s/g,''));
+                    const qi = cells.findIndex(c => c === '期初');
+                    if (qi >= 0) {
+                        invHeaderIdx = i;
+                        codeCol = cells.findIndex(c => c.includes('编码'));
+                        nameCol = cells.findIndex(c => c.includes('名称'));
+                        specCol = cells.findIndex(c => c.includes('规格'));
+                        catCol = cells.findIndex(c => c.includes('类别'));
+                        unitCol = cells.findIndex(c => c === '单位');
+                        initCol = qi;
+                        incomeCol = cells.findIndex(c => c === '收入');
+                        balanceCol = cells.findIndex(c => c === '结存');
+                        if (codeCol < 0) codeCol = 0;
+                        if (nameCol < 0) nameCol = 1;
+                        if (specCol < 0) specCol = 2;
+                        if (catCol < 0) catCol = 3;
+                        if (unitCol < 0) unitCol = 7;
+                        if (incomeCol < 0) incomeCol = initCol + 1;
+                        if (balanceCol < 0) balanceCol = incomeCol + 1;
+                        break;
+                    }
+                }
+                
+                invData = [];
+                let convertCount = 0;
+                
+                for (let i = invHeaderIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (r[codeCol] && r[codeCol] !== '合计' && r[nameCol]) {
+                        const specStr = r[specCol] || '';
+                        const specInfo = parseSpec(specStr);
+                        const rawUnit = r[unitCol] || '';
+                        const needConvert = specInfo && ['件','箱','包','捆'].includes(rawUnit);
+                        
+                        let initOrig = parseFloat(r[initCol]) || 0;
+                        let incomeOrig = parseFloat(r[incomeCol]) || 0;
+                        let balanceOrig = parseFloat(r[balanceCol]) || 0;
+                        let initConv = initOrig, incomeConv = incomeOrig, balanceConv = balanceOrig;
+                        let displayUnit = rawUnit;
+                        
+                        if (needConvert && specInfo) {
+                            initConv = initOrig * specInfo.ratio;
+                            incomeConv = incomeOrig * specInfo.ratio;
+                            balanceConv = balanceOrig * specInfo.ratio;
+                            displayUnit = specInfo.smallUnit;
+                            convertCount++;
+                        }
+                        
+                        invData.push({
+                            code: r[codeCol], name: r[nameCol], spec: specStr, category: r[catCol]||'',
+                            rawUnit: rawUnit, specInfo: specInfo, needConvert: needConvert,
+                            initOrig, incomeOrig, balanceOrig,
+                            init: initConv, income: incomeConv, balance: balanceConv, displayUnit,
+                            salesQty: 0, salesDetail: [],
+                            actual: null, diff: null, reason: '', action: ''
+                        });
+                    }
+                }
+                
+                let infoHtml = `✅ 已解析 <b>${invData.length}</b> 条物料`;
+                if (convertCount > 0) infoHtml += `<br>🔄 其中 <b>${convertCount}</b> 条物料自动进行了单位换算`;
+                document.getElementById('invInfo').innerHTML = infoHtml;
+                
+                if (convertCount > 0) renderConvertSummary();
+                else document.getElementById('convertSummary').style.display = 'none';
+                
+                calcSales();
+                showToast('物料表解析成功');
+                checkReady();
+            } catch(err) { showToast('解析失败：' + err.message); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderConvertSummary() {
+        const converted = invData.filter(i => i.needConvert);
+        if (converted.length === 0) { document.getElementById('convertSummary').style.display = 'none'; return; }
+        document.getElementById('convertSummary').style.display = '';
+        document.getElementById('convertList').innerHTML = converted.map(item => 
+            `<div class="convert-info"><b>${item.name}</b>：${item.spec}<br>1${item.specInfo.bigUnit} = ${item.specInfo.ratio}${item.specInfo.smallUnit}<br>期初: ${item.initOrig}${item.rawUnit} → <b>${item.init.toFixed(2)}${item.displayUnit}</b><br>收入: ${item.incomeOrig}${item.rawUnit} → <b>${item.income.toFixed(2)}${item.displayUnit}</b></div>`
+        ).join('');
+    }
+
+    function handleSalesUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('salesFileName').textContent = file.name;
+        document.getElementById('uploadSales').classList.add('uploaded');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const wb = XLSX.read(e.target.result, {type:'array'});
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+                
+                // 动态查找表头行和列位置
+                let headerIdx = -1, nameCol = 0, qtyCol = 3;
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    const r = rows[i];
+                    if (!r) continue;
+                    const cells = r.map(c => String(c||'').replace(/\s/g,''));
+                    const qIdx = cells.findIndex(c => c.includes('销售数量'));
+                    const nIdx = cells.findIndex(c => c.includes('菜品名称'));
+                    if (qIdx >= 0) {
+                        headerIdx = i;
+                        nameCol = nIdx >= 0 ? nIdx : 0;
+                        qtyCol = qIdx;
+                        break;
+                    }
+                }
+                
+                salesRaw = [];
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (r[nameCol] && String(r[nameCol]).trim() !== '合计') {
+                        salesRaw.push({ name: String(r[nameCol]).trim(), qty: parseFloat(r[qtyCol])||0 });
+                    }
+                }
+                document.getElementById('salesInfo').innerHTML = `✅ 已解析 <b>${salesRaw.length}</b> 条菜品销售`;
+                calcSales();
+                showToast('销售数据解析成功');
+                checkReady();
+            } catch(err) { showToast('解析失败：' + err.message); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function calcSales() {
+        if (invData.length === 0 || salesRaw.length === 0) return;
+        
+        invData.forEach(item => { item.salesQty = 0; item.salesDetail = []; });
+        unmatchedDishes = [];
+        
+        const materialSales = {};
+        const materialDetail = {};
+        
+        salesRaw.forEach(s => {
+            const materialName = currentMapping[s.name];
+            if (materialName) {
+                if (!materialSales[materialName]) {
+                    materialSales[materialName] = 0;
+                    materialDetail[materialName] = [];
+                }
+                materialSales[materialName] += s.qty;
+                materialDetail[materialName].push({name: s.name, qty: s.qty});
+            } else {
+                unmatchedDishes.push({name: s.name, qty: s.qty});
+            }
+        });
+        
+        invData.forEach(item => {
+            if (materialSales[item.name]) {
+                item.salesQty = materialSales[item.name];
+                item.salesDetail = materialDetail[item.name] || [];
+            }
+        });
+        
+        // Show unmatched warning
+        if (unmatchedDishes.length > 0) {
+            document.getElementById('unmatchedWarn').style.display = '';
+            document.getElementById('unmatchedList').innerHTML = 
+                `<div class="unmatched-warn">以下 ${unmatchedDishes.length} 个菜品未找到对应物料映射：<br>` +
+                unmatchedDishes.slice(0, 20).map(d => `• ${d.name} (${d.qty})`).join('<br>') +
+                (unmatchedDishes.length > 20 ? `<br>... 等共${unmatchedDishes.length}个` : '') +
+                `</div>`;
+        } else {
+            document.getElementById('unmatchedWarn').style.display = 'none';
+        }
+    }
+
+    function checkReady() {
+        if (invData.length > 0 && salesRaw.length > 0) {
+            const matched = invData.filter(i => i.salesQty > 0).length;
+            document.getElementById('invInfo').innerHTML += `<br>📊 已匹配 ${matched}/${invData.length} 个物料的销售数据`;
+        }
+    }
+
+    // ========== STEP 3: INPUT ACTUAL ==========
+    function renderInvList() {
+        const list = document.getElementById('invList');
+        const catColors = {'酒水类':'#e8f0fe;color:#1a73e8','小吃类':'#fef7e0;color:#ea8600','荤菜类':'#fce8e6;color:#c5221f','素菜类':'#e6f4ea;color:#137333'};
+        
+        list.innerHTML = invData.map((item, idx) => {
+            const theory = item.init + item.income - item.salesQty;
+            const catStyle = catColors[item.category] || '#f8f9fa;color:#666';
+            
+            let salesDetailStr = '';
+            if (item.salesDetail.length > 0) {
+                salesDetailStr = item.salesDetail.map(s => `${s.name}:${s.qty}`).join(' + ');
+            }
+            
+            let convertTag = item.needConvert ? `<span class="unit-convert">已换算 1${item.specInfo.bigUnit}=${item.specInfo.ratio}${item.specInfo.smallUnit}</span>` : '';
+            
+            let initDisplay = item.needConvert ? `${item.init.toFixed(1)}<div class="sub">(${item.initOrig}${item.rawUnit})</div>` : `${item.init}`;
+            let incomeDisplay = item.needConvert ? `${item.income.toFixed(1)}<div class="sub">(${item.incomeOrig}${item.rawUnit})</div>` : `${item.income}`;
+            
+            return `<div class="inv-item" id="item-${idx}">
+                <div class="name-row">
+                    <span class="name">${idx+1}. ${item.name} ${convertTag}</span>
+                    <span class="cat-tag" style="background:${catStyle.split(';')[0]};${catStyle.split(';')[1]||''}">${item.category}</span>
+                </div>
+                ${salesDetailStr ? `<div class="sales-info">销售明细: ${salesDetailStr} = <b>${item.salesQty}${item.displayUnit}</b></div>` : '<div class="sales-info" style="color:#ea4335;">⚠️ 无匹配销售数据</div>'}
+                <div class="data-grid">
+                    <div class="data-cell"><div class="label">期初(${item.displayUnit})</div><div class="value">${initDisplay}</div></div>
+                    <div class="data-cell"><div class="label">收入(${item.displayUnit})</div><div class="value">${incomeDisplay}</div></div>
+                    <div class="data-cell"><div class="label">销售(${item.displayUnit})</div><div class="value">${item.salesQty}</div></div>
+                    <div class="data-cell theory"><div class="label">理论结存(${item.displayUnit})</div><div class="value">${theory.toFixed(1)}</div></div>
+                </div>
+                <div class="actual-row">
+                    <label>实盘:</label>
+                    <input type="number" step="0.01" id="actual-${idx}" placeholder="输入数量"
+                        value="${item.actual!==null?item.actual:''}" oninput="updateActual(${idx},this.value)">
+                    <span class="unit-hint">${item.displayUnit}</span>
+                    <button class="vbtn voice" id="vbtn-${idx}" onclick="openVoice(${idx})">🎤</button>
+                </div>
+                <div id="diff-${idx}" style="display:none;"></div>
+            </div>`;
+        }).join('');
+        
+        updateProgress();
+        if (!voiceApiOk) document.querySelectorAll('.vbtn.voice').forEach(b => b.textContent = '⌨');
+    }
+
+    function updateActual(idx, val) {
+        const v = parseFloat(val);
+        if (isNaN(v)) { invData[idx].actual = null; invData[idx].diff = null; }
+        else {
+            invData[idx].actual = v;
+            const theory = invData[idx].init + invData[idx].income - invData[idx].salesQty;
+            invData[idx].diff = v - theory;
+        }
+        
+        const el = document.getElementById(`diff-${idx}`);
+        const item = document.getElementById(`item-${idx}`);
+        if (invData[idx].diff !== null) {
+            const d = invData[idx].diff;
+            let cls, txt;
+            if (d > 0.01) { cls='diff-tag pos'; txt=`盘盈 +${d.toFixed(2)}${invData[idx].displayUnit}`; item.className='inv-item has-diff'; }
+            else if (d < -0.01) { cls='diff-tag neg'; txt=`盘亏 ${d.toFixed(2)}${invData[idx].displayUnit}`; item.className='inv-item has-diff'; }
+            else { cls='diff-tag zero'; txt='✓ 一致'; item.className='inv-item no-diff'; }
+            el.className = cls; el.textContent = txt; el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+            item.className = 'inv-item';
+        }
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const total = invData.length, done = invData.filter(i=>i.actual!==null).length;
+        document.getElementById('progressFill').style.width = (total?done/total*100:0)+'%';
+        document.getElementById('progressText').textContent = `已完成 ${done}/${total}`;
+    }
+
+    // ========== VOICE ==========
+    function openVoice(idx) {
+        currentVoiceIdx = idx;
+        document.getElementById('voiceOverlay').classList.add('active');
+        document.getElementById('voiceInput').value = '';
+        document.getElementById('voiceInput').focus();
+        document.getElementById('voiceRecBtn').textContent = '🎤 开始录音';
+        document.getElementById('voiceRecBtn').classList.remove('recording');
+        showVoiceMatches('');
+    }
+    function closeVoice() {
+        document.getElementById('voiceOverlay').classList.remove('active');
+        if (recognition) { try{recognition.stop();}catch(e){} }
+        currentVoiceIdx = null;
+    }
+    function toggleRecord() {
+        if (!voiceApiOk) { showToast('当前浏览器不支持语音，请手动输入'); return; }
+        const btn = document.getElementById('voiceRecBtn');
+        if (recognition && btn.classList.contains('recording')) {
+            recognition.stop(); btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; return;
+        }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SR(); recognition.lang = 'zh-CN'; recognition.continuous = false;
+        btn.classList.add('recording'); btn.textContent = '⏺ 录音中...';
+        recognition.onresult = function(e) {
+            document.getElementById('voiceInput').value = e.results[0][0].transcript;
+            btn.classList.remove('recording'); btn.textContent = '🎤 开始录音';
+            processVoiceResult(e.results[0][0].transcript);
+        };
+        recognition.onerror = function() { btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; };
+        recognition.onend = function() { btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; };
+        recognition.start();
+    }
+    function onVoiceInput() { showVoiceMatches(document.getElementById('voiceInput').value); }
+    function showVoiceMatches(query) {
+        const list = document.getElementById('voiceMatchList');
+        if (!query) { list.innerHTML = '<div style="text-align:center;padding:10px;color:#999;font-size:13px;">输入数字直接录入</div>'; return; }
+        const num = parseFloat(query);
+        if (!isNaN(num) && query.trim() !== '') {
+            list.innerHTML = `<div class="match-item" onclick="setActual(${num})" style="background:#e8f0fe;font-weight:600;"><span>确认录入: ${num}</span><span>→</span></div>`;
+            return;
+        }
+        const matches = invData.filter(i => i.name.includes(query)).slice(0,10);
+        list.innerHTML = matches.map(item => {
+            const idx = invData.indexOf(item);
+            const theory = (item.init + item.income - item.salesQty).toFixed(1);
+            return `<div class="match-item" onclick="selectVoiceMatch(${idx})"><span>${item.name}</span><span style="font-size:12px;color:#666;">理论: ${theory}</span></div>`;
+        }).join('');
+    }
+    function setActual(num) {
+        if (currentVoiceIdx === null) return;
+        document.getElementById(`actual-${currentVoiceIdx}`).value = num;
+        updateActual(currentVoiceIdx, num); closeVoice(); showToast(`已录入: ${num}`);
+    }
+    function selectVoiceMatch(idx) {
+        currentVoiceIdx = idx;
+        document.getElementById(`item-${idx}`).scrollIntoView({behavior:'smooth', block:'center'});
+        closeVoice(); setTimeout(() => document.getElementById(`actual-${idx}`).focus(), 300);
+    }
+    function processVoiceResult(text) {
+        const num = parseFloat(text);
+        if (!isNaN(num)) setActual(num); else showVoiceMatches(text);
+    }
+
+    // ========== STEP 4: REVIEW ==========
+    function renderResults() {
+        document.getElementById('storeLabel').textContent = `🏪 ${selectedStore}`;
+        const total = invData.length;
+        const entered = invData.filter(i => i.actual !== null);
+        const diffs = entered.filter(i => Math.abs(i.diff) > 0.01);
+        const oks = entered.filter(i => Math.abs(i.diff) <= 0.01);
+        const unentered = invData.filter(i => i.actual === null);
+        
+        document.getElementById('resultSummary').innerHTML = `
+            <div class="sum-row"><span>考评物料</span><span class="val">${total}</span></div>
+            <div class="sum-row"><span>已盘点</span><span class="val">${entered.length}</span></div>
+            <div class="sum-row"><span>无差异</span><span class="val green">${oks.length}</span></div>
+            <div class="sum-row"><span>有差异</span><span class="val red">${diffs.length}</span></div>
+            ${unentered.length ? `<div class="sum-row"><span>未录入</span><span class="val" style="color:#ea8600">${unentered.length}</span></div>` : ''}
+        `;
+        
+        const diffList = document.getElementById('diffList');
+        if (diffs.length === 0) { diffList.innerHTML = '<div style="text-align:center;padding:24px;color:#34a853;font-size:16px;">✅ 全部一致，无差异</div>'; return; }
+        
+        diffList.innerHTML = diffs.map(item => {
+            const idx = invData.indexOf(item);
+            const theory = (item.init + item.income - item.salesQty).toFixed(2);
+            const type = item.diff > 0 ? '盘盈' : '盘亏';
+            const color = item.diff > 0 ? '#137333' : '#c5221f';
+            const unit = item.displayUnit;
+            let convertNote = '';
+            if (item.needConvert) {
+                convertNote = `<div style="font-size:11px;color:#1a73e8;margin-bottom:4px;">🔄 原始${item.initOrig}${item.rawUnit}→${item.init.toFixed(1)}${unit}，${item.incomeOrig}${item.rawUnit}→${item.income.toFixed(1)}${unit}</div>`;
+            }
+            return `<div style="margin-bottom:12px;padding:12px;background:#f8f9fa;border-radius:8px;border-left:3px solid ${color};">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="font-weight:600;">${item.name}</span>
+                    <span style="color:${color};font-weight:600;">${type} ${Math.abs(item.diff).toFixed(2)}${unit}</span>
+                </div>${convertNote}
+                <div style="font-size:12px;color:#666;margin-bottom:8px;">理论: ${theory}${unit} → 实际: ${item.actual}${unit}</div>
+                <div class="reason-box">
+                    <select onchange="invData[${idx}].action=this.value">
+                        <option value="">选择处理方式...</option>
+                        <option value="正常损耗" ${item.action==='正常损耗'?'selected':''}>正常损耗</option>
+                        <option value="计量误差" ${item.action==='计量误差'?'selected':''}>计量误差</option>
+                        <option value="漏记入库" ${item.action==='漏记入库'?'selected':''}>漏记入库</option>
+                        <option value="漏记出库" ${item.action==='漏记出库'?'selected':''}>漏记出库</option>
+                        <option value="退货处理" ${item.action==='退货处理'?'selected':''}>退货处理</option>
+                        <option value="报损处理" ${item.action==='报损处理'?'selected':''}>报损处理</option>
+                        <option value="其他" ${item.action==='其他'?'selected':''}>其他</option>
+                    </select>
+                    <textarea placeholder="补充说明..." onchange="invData[${idx}].reason=this.value">${item.reason}</textarea>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ========== STEP 5: EXPORT ==========
+    function exportResult() {
+        const header = ['门店','物料编码','物料名称','规格','类别','原始单位','是否换算','换算比例','期初(原始)','期初(换算)','收入(原始)','收入(换算)','最小单位','销售明细','销售合计','理论结存','实际盘点','差异','差异原因','处理方式'];
+        const data = invData.map(item => {
+            const theory = (item.init + item.income - item.salesQty).toFixed(2);
+            const detail = item.salesDetail.map(s => `${s.name}:${s.qty}`).join('；');
+            const convRatio = item.needConvert ? `1${item.specInfo.bigUnit}=${item.specInfo.ratio}${item.specInfo.smallUnit}` : '';
+            return [
+                selectedStore, item.code, item.name, item.spec, item.category, item.rawUnit,
+                item.needConvert ? '是' : '否', convRatio,
+                item.needConvert ? item.initOrig : item.init,
+                item.needConvert ? item.init.toFixed(2) : '',
+                item.needConvert ? item.incomeOrig : item.income,
+                item.needConvert ? item.income.toFixed(2) : '',
+                item.displayUnit,
+                detail, item.salesQty, theory,
+                item.actual!==null ? item.actual : '',
+                item.diff!==null ? item.diff.toFixed(2) : '',
+                item.reason, item.action
+            ];
+        });
+        
+        const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+        ws['!cols'] = [
+            {wch:24},{wch:12},{wch:18},{wch:18},{wch:8},{wch:8},{wch:8},{wch:14},
+            {wch:10},{wch:10},{wch:10},{wch:10},{wch:8},
+            {wch:24},{wch:8},{wch:10},{wch:10},{wch:8},{wch:16},{wch:12}
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '考评结果');
+        const storeShort = selectedStore.replace(/[（()）]/g,'').substring(0,10);
+        XLSX.writeFile(wb, `考评结果_${storeShort}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        showToast('导出成功！');
+    }
+
+    // ========== NAVIGATION ==========
+    function goToStep(step) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById(`step${step}`).classList.add('active');
+        currentStep = step;
+        const names = ['选择门店','上传数据','录入盘点','考评结果','导出'];
+        document.getElementById('headerSub').textContent = `步骤 ${step}/5：${names[step-1]}`;
+        document.getElementById('btnPrev').style.display = step > 1 ? '' : 'none';
+        document.getElementById('btnNext').textContent = step === 5 ? '完成' : '下一步';
+        if (step === 3) renderInvList();
+        if (step === 4) renderResults();
+        window.scrollTo(0, 0);
+    }
+
+    function nextStep() {
+        if (currentStep === 1) {
+            if (!selectedStore) { showToast('请先选择门店'); return; }
+            goToStep(2);
+        } else if (currentStep === 2) {
+            if (!invData.length || !salesRaw.length) { showToast('请先上传两个文件'); return; }
+            goToStep(3);
+        } else if (currentStep === 3) {
+            const un = invData.filter(i => i.actual === null);
+            if (un.length && !confirm(`还有 ${un.length} 个物料未录入，确定继续？`)) return;
+            goToStep(4);
+        } else if (currentStep === 4) {
+            goToStep(5);
+        } else if (currentStep === 5) {
+            exportResult();
+        }
+    }
+
+    function prevStep() { if (currentStep > 1) goToStep(currentStep - 1); }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.className = 'toast show';
+        setTimeout(() => t.className = 'toast', 2000);
+    }
+    </script>
+</body>
+</html>
