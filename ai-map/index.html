@@ -9,12 +9,10 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
 .container { max-width: 800px; margin: 0 auto; }
 
-/* Header */
 .header { text-align: center; margin-bottom: 28px; }
 .header h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 6px; }
 
-/* Summary Cards */
 .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
 .summary-card { background: #1e293b; border-radius: 12px; padding: 14px 10px; text-align: center; border: 1px solid #334155; }
 .summary-card .num { font-size: 28px; font-weight: 800; }
@@ -24,20 +22,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .summary-card.partial .num { color: #fbbf24; }
 .summary-card.test .num { color: #a78bfa; }
 
-/* AI Adoption Bar */
 .adoption { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #334155; }
 .adoption-title { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
 .adoption-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
 .adoption-fill { height: 100%; background: linear-gradient(90deg, #34d399, #60a5fa); border-radius: 4px; width: 25%; }
 .adoption-pct { font-size: 12px; color: #34d399; margin-top: 6px; }
 
-/* Section */
 .section { margin-bottom: 24px; }
 .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 .section-title .icon { font-size: 18px; }
 
-/* Capability Cards */
-.cap-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; }
+/* Capability Cards - 左右布局 */
+.cap-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; display: flex; gap: 16px; }
+.cap-left { flex: 1; min-width: 0; }
 .cap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .cap-id { font-size: 11px; color: #64748b; font-weight: 600; }
 .cap-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
@@ -47,17 +44,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .cap-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
 .cap-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
 
-/* Efficiency Comparison */
-.eff-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; }
-.eff-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-.eff-savings { font-size: 12px; color: #34d399; font-weight: 700; background: rgba(52,211,153,0.12); padding: 2px 8px; border-radius: 10px; }
-.eff-row { display: flex; align-items: center; margin-bottom: 8px; }
-.eff-label { width: 60px; font-size: 11px; color: #94a3b8; flex-shrink: 0; }
-.eff-bar-wrap { flex: 1; margin: 0 10px; }
-.eff-bar { height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 600; color: #fff; }
-.eff-bar.manual { background: linear-gradient(90deg, #ef4444, #f87171); }
-.eff-bar.ai { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-.eff-time { font-size: 11px; color: #94a3b8; width: 65px; text-align: right; flex-shrink: 0; }
+/* 右侧提效对比 */
+.cap-right { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.cap-eff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.cap-eff-label { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+.cap-eff-savings { font-size: 11px; color: #34d399; font-weight: 700; }
+.cap-eff-row { display: flex; align-items: center; gap: 6px; }
+.cap-eff-tag { font-size: 10px; width: 26px; color: #94a3b8; flex-shrink: 0; }
+.cap-eff-bar { flex: 1; height: 14px; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-size: 9px; font-weight: 600; color: #fff; }
+.cap-eff-bar.manual { background: linear-gradient(90deg, #ef4444, #f87171); }
+.cap-eff-bar.ai { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 
 /* Goal Cards */
 .goal-card { background: #1e293b; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; border: 1px solid #334155; display: flex; align-items: flex-start; gap: 12px; }
@@ -66,18 +62,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .goal-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .goal-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
 
-/* Footer */
 .footer { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #1e293b; }
 .footer span { font-size: 11px; color: #475569; }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   body { padding: 14px; }
   .header h1 { font-size: 20px; }
   .summary { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .summary-card { padding: 10px 6px; }
   .summary-card .num { font-size: 22px; }
-  .eff-label { width: 50px; font-size: 10px; }
-  .eff-time { width: 55px; font-size: 10px; }
+  .cap-card { flex-direction: column; }
+  .cap-right { width: 100%; flex-direction: row; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid #334155; }
+  .cap-eff-header { width: 100%; }
+  .cap-eff-row { flex: 1; min-width: 140px; }
 }
 </style>
 </head>
@@ -92,8 +89,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   <div class="summary">
     <div class="summary-card total"><div class="num">8</div><div class="label">总项数</div></div>
     <div class="summary-card done"><div class="num">2</div><div class="label">✅ 已能做</div></div>
-    <div class="summary-card partial"><div class="num">1</div><div class="label">⚠️ 部分人工</div></div>
-    <div class="summary-card test"><div class="num">5</div><div class="label">🧪 待测试</div></div>
+    <div class="summary-card partial"><div class="num">1</div><div class="label">️ 部分人工</div></div>
+    <div class="summary-card test"><div class="num">5</div><div class="label"> 待测试</div></div>
   </div>
 
   <!-- AI Adoption -->
@@ -103,79 +100,71 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="adoption-pct">25% 已能做（2/8）</div>
   </div>
 
-  <!-- 提效对比 -->
+  <!-- AI能力盘点（右侧内嵌提效对比） -->
   <div class="section">
-    <div class="section-title"><span class="icon">⚡</span> 人工 vs AI 提效对比</div>
-
-    <div class="eff-card">
-      <div class="eff-title">收银数据核查 <span class="eff-savings">省 4h</span></div>
-      <div class="eff-row">
-        <div class="eff-label">人工</div>
-        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">5-6h</div></div>
-        <div class="eff-time">5-6 小时</div>
-      </div>
-      <div class="eff-row">
-        <div class="eff-label">AI</div>
-        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:25%">1-1.5h</div></div>
-        <div class="eff-time">1-1.5 小时</div>
-      </div>
-    </div>
-
-    <div class="eff-card">
-      <div class="eff-title">经营看板数据更新 <span class="eff-savings">省 1天</span></div>
-      <div class="eff-row">
-        <div class="eff-label">人工</div>
-        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">1天</div></div>
-        <div class="eff-time">约 8 小时</div>
-      </div>
-      <div class="eff-row">
-        <div class="eff-label">AI</div>
-        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:8%">闲时跑</div></div>
-        <div class="eff-time">0 人工</div>
-      </div>
-    </div>
-
-    <div class="eff-card">
-      <div class="eff-title">采购入库单核对（单家） <span class="eff-savings">省 50%</span></div>
-      <div class="eff-row">
-        <div class="eff-label">人工</div>
-        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">30min</div></div>
-        <div class="eff-time">30 分钟</div>
-      </div>
-      <div class="eff-row">
-        <div class="eff-label">AI</div>
-        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:50%">10-15min</div></div>
-        <div class="eff-time">10-15 分钟</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- AI能力盘点 -->
-  <div class="section">
-    <div class="section-title"><span class="icon">🗺️</span> AI能力盘点</div>
+    <div class="section-title"><span class="icon">🗺️</span> AI能力盘点 · 当前已具备的能力 · 共3项</div>
 
     <div class="cap-card">
-      <div class="cap-header"><span class="cap-id">AI-01</span><span class="cap-status done">✅ 已能做</span></div>
-      <div class="cap-name">收银数据核查一步走</div>
-      <div class="cap-desc">AI工具全接手。人工5-6小时 → AI 1-1.5小时出结果，提效约4小时</div>
+      <div class="cap-left">
+        <div class="cap-header"><span class="cap-id">AI-01</span><span class="cap-status done">✅ 已能做</span></div>
+        <div class="cap-name">收银数据核查一步走</div>
+        <div class="cap-desc">AI工具全接手</div>
+      </div>
+      <div class="cap-right">
+        <div class="cap-eff-header"><span class="cap-eff-label">提效对比</span><span class="cap-eff-savings">省 4h</span></div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">人工</span>
+          <div class="cap-eff-bar manual" style="width:100%">5-6h</div>
+        </div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">AI</span>
+          <div class="cap-eff-bar ai" style="width:25%">1-1.5h</div>
+        </div>
+      </div>
     </div>
 
     <div class="cap-card">
-      <div class="cap-header"><span class="cap-id">AI-02</span><span class="cap-status done">✅ 已能做</span></div>
-      <div class="cap-name">经营看板数据更新</div>
-      <div class="cap-desc">每月导入汇总数更新，AI工具全接手。人工1天 → AI闲时跑，提效1天</div>
+      <div class="cap-left">
+        <div class="cap-header"><span class="cap-id">AI-02</span><span class="cap-status done">✅ 已能做</span></div>
+        <div class="cap-name">经营看板数据更新</div>
+        <div class="cap-desc">每月导入汇总数更新，AI工具全接手</div>
+      </div>
+      <div class="cap-right">
+        <div class="cap-eff-header"><span class="cap-eff-label">提效对比</span><span class="cap-eff-savings">省 1天</span></div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">人工</span>
+          <div class="cap-eff-bar manual" style="width:100%">1天</div>
+        </div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">AI</span>
+          <div class="cap-eff-bar ai" style="width:8%">闲时跑</div>
+        </div>
+      </div>
     </div>
 
     <div class="cap-card">
-      <div class="cap-header"><span class="cap-id">AI-03</span><span class="cap-status partial">⚠️ 部分人工</span></div>
-      <div class="cap-name">采购入库单核对</div>
-      <div class="cap-desc">需送货单图片和系统入库表，果冻全核对。单据不多/机打清晰的供应商，人工30min → AI 10-15min</div>
+      <div class="cap-left">
+        <div class="cap-header"><span class="cap-id">AI-03</span><span class="cap-status partial">⚠️ 部分人工</span></div>
+        <div class="cap-name">采购入库单核对</div>
+        <div class="cap-desc">需送货单图片和系统入库表，果冻全核对</div>
+      </div>
+      <div class="cap-right">
+        <div class="cap-eff-header"><span class="cap-eff-label">提效对比</span><span class="cap-eff-savings">省 50%</span></div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">人工</span>
+          <div class="cap-eff-bar manual" style="width:100%">30min</div>
+        </div>
+        <div class="cap-eff-row">
+          <span class="cap-eff-tag">AI</span>
+          <div class="cap-eff-bar ai" style="width:50%">10-15min</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- 下月目标 -->
   <div class="section">
-    <div class="section-title"><span class="icon">🎯</span> 下月 5 大目标</div>
+    <div class="section-title"><span class="icon"></span> 下月 5 大目标 · 全部待测试</div>
 
     <div class="goal-card">
       <div class="goal-num">1</div>
