@@ -6,82 +6,86 @@
 <title>AI地图 · 能力与目标看板</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
-.container { max-width: 800px; margin: 0 auto; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; padding: 24px 16px; line-height: 1.6; }
+.container { max-width: 860px; margin: 0 auto; }
 
+/* Header */
 .header { text-align: center; margin-bottom: 28px; }
-.header h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+.header h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+.header .subtitle { font-size: 13px; color: #888; margin-top: 4px; }
 
-.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
-.summary-card { background: #1e293b; border-radius: 12px; padding: 14px 10px; text-align: center; border: 1px solid #334155; }
-.summary-card .num { font-size: 28px; font-weight: 800; }
-.summary-card .label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-.summary-card.total .num { color: #60a5fa; }
-.summary-card.done .num { color: #34d399; }
-.summary-card.partial .num { color: #fbbf24; }
-.summary-card.test .num { color: #a78bfa; }
+/* Summary Cards */
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.summary-card { background: #fff; border-radius: 10px; padding: 16px 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.summary-card .num { font-size: 30px; font-weight: 800; }
+.summary-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.summary-card.total .num { color: #2563eb; }
+.summary-card.done .num { color: #16a34a; }
+.summary-card.partial .num { color: #f59e0b; }
+.summary-card.test .num { color: #8b5cf6; }
 
-.adoption { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #334155; }
-.adoption-title { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
-.adoption-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
-.adoption-fill { height: 100%; background: linear-gradient(90deg, #34d399, #60a5fa); border-radius: 4px; width: 25%; }
-.adoption-pct { font-size: 12px; color: #34d399; margin-top: 6px; }
+/* AI Adoption Bar */
+.adoption { background: #fff; border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.adoption-title { font-size: 13px; color: #888; margin-bottom: 8px; }
+.adoption-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.adoption-fill { height: 100%; background: linear-gradient(90deg, #16a34a, #2563eb); border-radius: 4px; width: 25%; }
+.adoption-pct { font-size: 12px; color: #16a34a; margin-top: 6px; font-weight: 600; }
 
+/* Section */
 .section { margin-bottom: 24px; }
-.section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.section-title .icon { font-size: 18px; }
+.section-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.section-desc { font-size: 13px; color: #888; margin-bottom: 14px; }
 
-/* Capability Cards - 左右布局 */
-.cap-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; display: flex; gap: 16px; }
+/* Capability Cards */
+.cap-card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; gap: 16px; }
 .cap-left { flex: 1; min-width: 0; }
 .cap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.cap-id { font-size: 11px; color: #64748b; font-weight: 600; }
+.cap-id { font-size: 11px; color: #999; font-weight: 600; }
 .cap-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-.cap-status.done { background: rgba(52,211,153,0.15); color: #34d399; }
-.cap-status.partial { background: rgba(251,191,36,0.15); color: #fbbf24; }
-.cap-status.test { background: rgba(167,139,250,0.15); color: #a78bfa; }
-.cap-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-.cap-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.cap-status.done { background: #dcfce7; color: #16a34a; }
+.cap-status.partial { background: #fef3c7; color: #d97706; }
+.cap-status.test { background: #ede9fe; color: #7c3aed; }
+.cap-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: #1a1a1a; }
+.cap-desc { font-size: 12px; color: #666; line-height: 1.5; }
 
 /* 右侧提效对比 */
-.cap-right { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.cap-right { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; padding-left: 14px; border-left: 1px solid #f0f0f0; }
 .cap-eff-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.cap-eff-label { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; }
-.cap-eff-savings { font-size: 11px; color: #34d399; font-weight: 700; }
+.cap-eff-label { font-size: 10px; color: #999; font-weight: 600; letter-spacing: 0.5px; }
+.cap-eff-savings { font-size: 11px; color: #16a34a; font-weight: 700; }
 .cap-eff-row { display: flex; align-items: center; gap: 6px; }
-.cap-eff-tag { font-size: 10px; width: 26px; color: #94a3b8; flex-shrink: 0; }
-.cap-eff-bar { flex: 1; height: 14px; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-size: 9px; font-weight: 600; color: #fff; }
+.cap-eff-tag { font-size: 10px; width: 26px; color: #888; flex-shrink: 0; font-weight: 500; }
+.cap-eff-bar { flex: 1; height: 16px; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 9px; font-weight: 600; color: #fff; }
 .cap-eff-bar.manual { background: linear-gradient(90deg, #ef4444, #f87171); }
 .cap-eff-bar.ai { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 
 /* Goal Cards */
-.goal-card { background: #1e293b; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; border: 1px solid #334155; display: flex; align-items: flex-start; gap: 12px; }
-.goal-num { background: rgba(167,139,250,0.15); color: #a78bfa; font-size: 11px; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.goal-card { background: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; align-items: flex-start; gap: 12px; }
+.goal-num { background: #ede9fe; color: #7c3aed; font-size: 11px; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
 .goal-content { flex: 1; }
-.goal-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.goal-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.goal-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; }
+.goal-desc { font-size: 12px; color: #666; line-height: 1.5; }
 
-.footer { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #1e293b; }
-.footer span { font-size: 11px; color: #475569; }
+/* Footer */
+.footer { text-align: center; margin-top: 28px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+.footer span { font-size: 11px; color: #aaa; }
 
 @media (max-width: 560px) {
-  body { padding: 14px; }
-  .header h1 { font-size: 20px; }
+  body { padding: 14px 10px; }
+  .header h1 { font-size: 19px; }
   .summary { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .summary-card { padding: 10px 6px; }
+  .summary-card { padding: 12px 6px; }
   .summary-card .num { font-size: 22px; }
+  .summary-card .label { font-size: 10px; }
   .cap-card { flex-direction: column; }
-  .cap-right { width: 100%; flex-direction: row; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid #334155; }
-  .cap-eff-header { width: 100%; }
-  .cap-eff-row { flex: 1; min-width: 140px; }
+  .cap-right { width: 100%; padding-left: 0; border-left: none; padding-top: 12px; border-top: 1px solid #f0f0f0; }
 }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>🗺️ AI地图 · 能力与目标看板</h1>
+    <h1>AI地图 · 能力与目标看板</h1>
     <div class="subtitle">8项 · AI能力3项 + 下月5大目标 · 更新 2026-07-24</div>
   </div>
 
@@ -89,8 +93,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   <div class="summary">
     <div class="summary-card total"><div class="num">8</div><div class="label">总项数</div></div>
     <div class="summary-card done"><div class="num">2</div><div class="label">✅ 已能做</div></div>
-    <div class="summary-card partial"><div class="num">1</div><div class="label">️ 部分人工</div></div>
-    <div class="summary-card test"><div class="num">5</div><div class="label"> 待测试</div></div>
+    <div class="summary-card partial"><div class="num">1</div><div class="label">⚠️ 部分人工</div></div>
+    <div class="summary-card test"><div class="num">5</div><div class="label">🧪 待测试</div></div>
   </div>
 
   <!-- AI Adoption -->
@@ -100,9 +104,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="adoption-pct">25% 已能做（2/8）</div>
   </div>
 
-  <!-- AI能力盘点（右侧内嵌提效对比） -->
+  <!-- AI能力盘点 -->
   <div class="section">
-    <div class="section-title"><span class="icon">🗺️</span> AI能力盘点 · 当前已具备的能力 · 共3项</div>
+    <div class="section-title">🗺️ AI能力盘点</div>
+    <div class="section-desc">当前已具备的能力 · 共3项</div>
 
     <div class="cap-card">
       <div class="cap-left">
@@ -164,7 +169,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
   <!-- 下月目标 -->
   <div class="section">
-    <div class="section-title"><span class="icon"></span> 下月 5 大目标 · 全部待测试</div>
+    <div class="section-title">🎯 下月5大目标</div>
+    <div class="section-desc">全部待测试 · 逐项攻坚</div>
 
     <div class="goal-card">
       <div class="goal-num">1</div>
@@ -207,7 +213,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     </div>
   </div>
 
-  <div class="footer"><span>📄 AI地图（王凌波）· 2026-07 · Jarvis 生成</span></div>
+  <div class="footer"><span>📄 数据源：AI地图（王凌波）· 2026-07 · Jarvis 生成</span></div>
 </div>
 </body>
 </html>
