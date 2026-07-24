@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI地图 · 能力与目标看板</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; }
+
+/* Header */
+.header { text-align: center; margin-bottom: 28px; }
+.header h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header .subtitle { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+
+/* Summary Cards */
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+.summary-card { background: #1e293b; border-radius: 12px; padding: 14px 10px; text-align: center; border: 1px solid #334155; }
+.summary-card .num { font-size: 28px; font-weight: 800; }
+.summary-card .label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.summary-card.total .num { color: #60a5fa; }
+.summary-card.done .num { color: #34d399; }
+.summary-card.partial .num { color: #fbbf24; }
+.summary-card.test .num { color: #a78bfa; }
+
+/* AI Adoption Bar */
+.adoption { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid #334155; }
+.adoption-title { font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
+.adoption-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+.adoption-fill { height: 100%; background: linear-gradient(90deg, #34d399, #60a5fa); border-radius: 4px; width: 25%; }
+.adoption-pct { font-size: 12px; color: #34d399; margin-top: 6px; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.section-title .icon { font-size: 18px; }
+
+/* Capability Cards */
+.cap-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; }
+.cap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.cap-id { font-size: 11px; color: #64748b; font-weight: 600; }
+.cap-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.cap-status.done { background: rgba(52,211,153,0.15); color: #34d399; }
+.cap-status.partial { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.cap-status.test { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.cap-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.cap-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+/* Efficiency Comparison */
+.eff-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; }
+.eff-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.eff-savings { font-size: 12px; color: #34d399; font-weight: 700; background: rgba(52,211,153,0.12); padding: 2px 8px; border-radius: 10px; }
+.eff-row { display: flex; align-items: center; margin-bottom: 8px; }
+.eff-label { width: 60px; font-size: 11px; color: #94a3b8; flex-shrink: 0; }
+.eff-bar-wrap { flex: 1; margin: 0 10px; }
+.eff-bar { height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 600; color: #fff; }
+.eff-bar.manual { background: linear-gradient(90deg, #ef4444, #f87171); }
+.eff-bar.ai { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.eff-time { font-size: 11px; color: #94a3b8; width: 65px; text-align: right; flex-shrink: 0; }
+
+/* Goal Cards */
+.goal-card { background: #1e293b; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; border: 1px solid #334155; display: flex; align-items: flex-start; gap: 12px; }
+.goal-num { background: rgba(167,139,250,0.15); color: #a78bfa; font-size: 11px; font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.goal-content { flex: 1; }
+.goal-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.goal-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+/* Footer */
+.footer { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #1e293b; }
+.footer span { font-size: 11px; color: #475569; }
+
+@media (max-width: 480px) {
+  body { padding: 14px; }
+  .header h1 { font-size: 20px; }
+  .summary { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .summary-card { padding: 10px 6px; }
+  .summary-card .num { font-size: 22px; }
+  .eff-label { width: 50px; font-size: 10px; }
+  .eff-time { width: 55px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🗺️ AI地图 · 能力与目标看板</h1>
+    <div class="subtitle">8项 · AI能力3项 + 下月5大目标 · 更新 2026-07-24</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card total"><div class="num">8</div><div class="label">总项数</div></div>
+    <div class="summary-card done"><div class="num">2</div><div class="label">✅ 已能做</div></div>
+    <div class="summary-card partial"><div class="num">1</div><div class="label">⚠️ 部分人工</div></div>
+    <div class="summary-card test"><div class="num">5</div><div class="label">🧪 待测试</div></div>
+  </div>
+
+  <!-- AI Adoption -->
+  <div class="adoption">
+    <div class="adoption-title">AI已接手比例</div>
+    <div class="adoption-bar"><div class="adoption-fill"></div></div>
+    <div class="adoption-pct">25% 已能做（2/8）</div>
+  </div>
+
+  <!-- 提效对比 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">⚡</span> 人工 vs AI 提效对比</div>
+
+    <div class="eff-card">
+      <div class="eff-title">收银数据核查 <span class="eff-savings">省 4h</span></div>
+      <div class="eff-row">
+        <div class="eff-label">人工</div>
+        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">5-6h</div></div>
+        <div class="eff-time">5-6 小时</div>
+      </div>
+      <div class="eff-row">
+        <div class="eff-label">AI</div>
+        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:25%">1-1.5h</div></div>
+        <div class="eff-time">1-1.5 小时</div>
+      </div>
+    </div>
+
+    <div class="eff-card">
+      <div class="eff-title">经营看板数据更新 <span class="eff-savings">省 1天</span></div>
+      <div class="eff-row">
+        <div class="eff-label">人工</div>
+        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">1天</div></div>
+        <div class="eff-time">约 8 小时</div>
+      </div>
+      <div class="eff-row">
+        <div class="eff-label">AI</div>
+        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:8%">闲时跑</div></div>
+        <div class="eff-time">0 人工</div>
+      </div>
+    </div>
+
+    <div class="eff-card">
+      <div class="eff-title">采购入库单核对（单家） <span class="eff-savings">省 50%</span></div>
+      <div class="eff-row">
+        <div class="eff-label">人工</div>
+        <div class="eff-bar-wrap"><div class="eff-bar manual" style="width:100%">30min</div></div>
+        <div class="eff-time">30 分钟</div>
+      </div>
+      <div class="eff-row">
+        <div class="eff-label">AI</div>
+        <div class="eff-bar-wrap"><div class="eff-bar ai" style="width:50%">10-15min</div></div>
+        <div class="eff-time">10-15 分钟</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI能力盘点 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🗺️</span> AI能力盘点</div>
+
+    <div class="cap-card">
+      <div class="cap-header"><span class="cap-id">AI-01</span><span class="cap-status done">✅ 已能做</span></div>
+      <div class="cap-name">收银数据核查一步走</div>
+      <div class="cap-desc">AI工具全接手。人工5-6小时 → AI 1-1.5小时出结果，提效约4小时</div>
+    </div>
+
+    <div class="cap-card">
+      <div class="cap-header"><span class="cap-id">AI-02</span><span class="cap-status done">✅ 已能做</span></div>
+      <div class="cap-name">经营看板数据更新</div>
+      <div class="cap-desc">每月导入汇总数更新，AI工具全接手。人工1天 → AI闲时跑，提效1天</div>
+    </div>
+
+    <div class="cap-card">
+      <div class="cap-header"><span class="cap-id">AI-03</span><span class="cap-status partial">⚠️ 部分人工</span></div>
+      <div class="cap-name">采购入库单核对</div>
+      <div class="cap-desc">需送货单图片和系统入库表，果冻全核对。单据不多/机打清晰的供应商，人工30min → AI 10-15min</div>
+    </div>
+  </div>
+
+  <!-- 下月目标 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🎯</span> 下月 5 大目标</div>
+
+    <div class="goal-card">
+      <div class="goal-num">1</div>
+      <div class="goal-content">
+        <div class="goal-name">经营数据看板整合</div>
+        <div class="goal-desc">将经营数据看板、菜品销售排行结合，形成经营板块</div>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-num">2</div>
+      <div class="goal-content">
+        <div class="goal-name">门店看板数据</div>
+        <div class="goal-desc">将经营板块和收银指标结合，形成门店看板数据两大板块内容</div>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-num">3</div>
+      <div class="goal-content">
+        <div class="goal-name">开业账务核对</div>
+        <div class="goal-desc">理清开业账务核对需要的表及方法交给AI工具（拿之前的做测试）</div>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-num">4</div>
+      <div class="goal-content">
+        <div class="goal-name">闭店账务核对</div>
+        <div class="goal-desc">理清闭店账务核对需要的表及方法交给AI工具，做一个闭店待处理看板</div>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-num">5</div>
+      <div class="goal-content">
+        <div class="goal-name">考评一对一简便化</div>
+        <div class="goal-desc">用网页程序做（已有基础版本，支持14门店）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span>📄 AI地图（王凌波）· 2026-07 · Jarvis 生成</span></div>
+</div>
+</body>
+</html>
