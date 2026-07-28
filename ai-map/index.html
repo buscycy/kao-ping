@@ -36,6 +36,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .section-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
 .section-desc { font-size: 13px; color: #888; margin-bottom: 14px; }
 
+/* Skills Board */
+.skills-summary { display: flex; gap: 16px; margin-bottom: 14px; }
+.skills-stat { display: flex; align-items: center; gap: 6px; }
+.skills-stat .dot { width: 10px; height: 10px; border-radius: 50%; }
+.skills-stat .dot.green { background: #16a34a; }
+.skills-stat .dot.yellow { background: #f59e0b; }
+.skills-stat .stat-text { font-size: 13px; color: #555; font-weight: 600; }
+
+.skill-card { background: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; align-items: flex-start; gap: 12px; }
+.skill-num { font-size: 12px; font-weight: 700; color: #888; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; background: #f3f4f6; }
+.skill-content { flex: 1; }
+.skill-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
+.skill-name .skill-status { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.skill-name .skill-status.done { background: #dcfce7; color: #16a34a; }
+.skill-name .skill-status.partial { background: #fef3c7; color: #d97706; }
+.skill-desc { font-size: 12px; color: #666; line-height: 1.5; }
+.skill-note { font-size: 11px; color: #8b5cf6; margin-top: 6px; font-weight: 500; }
+
 /* Capability Cards */
 .cap-card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; gap: 16px; }
 .cap-left { flex: 1; min-width: 0; }
@@ -79,6 +97,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   .summary-card .label { font-size: 10px; }
   .cap-card { flex-direction: column; }
   .cap-right { width: 100%; padding-left: 0; border-left: none; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .skills-summary { flex-wrap: wrap; gap: 10px; }
 }
 </style>
 </head>
@@ -86,7 +105,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 <div class="container">
   <div class="header">
     <h1>AI地图 · 能力与目标看板</h1>
-    <div class="subtitle">8项 · AI能力3项 + 下月5大目标 · 更新 2026-07-24</div>
+    <div class="subtitle">上月Skills 5项 · AI能力3项 · 下月5大目标 · 更新 2026-07-28</div>
   </div>
 
   <!-- Summary -->
@@ -102,6 +121,59 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="adoption-title">AI已接手比例</div>
     <div class="adoption-bar"><div class="adoption-fill"></div></div>
     <div class="adoption-pct">25% 已能做（2/8）</div>
+  </div>
+
+  <!-- 上月Skills完成情况 -->
+  <div class="section">
+    <div class="section-title">📌 上月5个Skills完成情况</div>
+    <div class="section-desc">收银3项 + 看板优化2项 · 全部落地</div>
+
+    <div class="skills-summary">
+      <div class="skills-stat"><span class="dot green"></span><span class="stat-text">5 总项数</span></div>
+      <div class="skills-stat"><span class="dot green"></span><span class="stat-text">4 ✅ 已完成</span></div>
+      <div class="skills-stat"><span class="dot yellow"></span><span class="stat-text">1 ⚠️ 已产出待整合</span></div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-num">1</div>
+      <div class="skill-content">
+        <div class="skill-name">收银训练果冻自动导收银表格 <span class="skill-status done">✅ 已完成</span></div>
+        <div class="skill-desc">店内订单明细、团购明细等，先确保导出数据无误</div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-num">2</div>
+      <div class="skill-content">
+        <div class="skill-name">收银自主数据目标整理 <span class="skill-status done">✅ 已完成</span></div>
+        <div class="skill-desc">导表无异常后加入，先训练能直接公式算出的指标</div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-num">3</div>
+      <div class="skill-content">
+        <div class="skill-name">收银明细表结合指标 <span class="skill-status done">✅ 已完成</span></div>
+        <div class="skill-desc">训练需要明细表结合看的其他指标</div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-num">4</div>
+      <div class="skill-content">
+        <div class="skill-name">看板数据优化6月数据可用性验证 <span class="skill-status done">✅ 已完成</span></div>
+        <div class="skill-desc">6月数据加入后看数据能否直接使用</div>
+      </div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-num">5</div>
+      <div class="skill-content">
+        <div class="skill-name">看板数据优化收银数据板块框架 <span class="skill-status partial">⚠️ 已产出待整合</span></div>
+        <div class="skill-desc">加入收银数据板块框架，看如何结合到看板数据里</div>
+        <div class="skill-note">↳ 框架结合部分承接至下月目标 ②</div>
+      </div>
+    </div>
   </div>
 
   <!-- AI能力盘点 -->
@@ -151,7 +223,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       <div class="cap-left">
         <div class="cap-header"><span class="cap-id">AI-03</span><span class="cap-status partial">⚠️ 部分人工</span></div>
         <div class="cap-name">采购入库单核对</div>
-        <div class="cap-desc">需送货单图片和系统入库表，果冻全核对</div>
+        <div class="cap-desc">需送货单图片和系统入库表，果冻全核对；单据品项不多、机打清晰的供应商效率最高</div>
       </div>
       <div class="cap-right">
         <div class="cap-eff-header"><span class="cap-eff-label">提效对比（单供应商）</span><span class="cap-eff-savings">省 50%</span></div>
@@ -208,12 +280,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       <div class="goal-num">5</div>
       <div class="goal-content">
         <div class="goal-name">考评一对一简便化</div>
-        <div class="goal-desc">用网页程序做（已有基础版本，支持14门店）</div>
+        <div class="goal-desc">用网页程序做（扣子已做雏形，使用果冻优化）</div>
       </div>
     </div>
   </div>
 
-  <div class="footer"><span>📄 数据源：AI地图（王凌波）· 2026-07 · Jarvis 生成</span></div>
+  <div class="footer"><span>📄 数据源：AI地图（王凌波）· 2026-07 · 果冻整理</span></div>
 </div>
 </body>
 </html>
