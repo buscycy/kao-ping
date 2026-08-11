@@ -446,7 +446,7 @@
                 
                 // 动态查找表头行和列位置
                 let invHeaderIdx = -1;
-                let codeCol = 0, nameCol = 1, specCol = 2, catCol = 3, unitCol = 7;
+                let codeCol = 0, nameCol = 1, specCol = 2, catCol = 3, unitCol = 7, warehouseCol = 4;
                 let initCol = 8, incomeCol = 9, balanceCol = 11;
                 for (let i = 0; i < Math.min(rows.length, 10); i++) {
                     const r = rows[i];
@@ -460,6 +460,7 @@
                         specCol = cells.findIndex(c => c.includes('规格'));
                         catCol = cells.findIndex(c => c.includes('类别'));
                         unitCol = cells.findIndex(c => c === '单位');
+                        warehouseCol = cells.findIndex(c => c.includes('仓库'));
                         initCol = qi;
                         incomeCol = cells.findIndex(c => c === '收入');
                         balanceCol = cells.findIndex(c => c === '结存');
@@ -468,6 +469,7 @@
                         if (specCol < 0) specCol = 2;
                         if (catCol < 0) catCol = 3;
                         if (unitCol < 0) unitCol = 7;
+                        if (warehouseCol < 0) warehouseCol = 4;
                         if (incomeCol < 0) incomeCol = initCol + 1;
                         if (balanceCol < 0) balanceCol = incomeCol + 1;
                         break;
@@ -491,45 +493,70 @@
                 // 兜底：如果全表都没扫到像编码的行（比如编码规则完全不同），退回"期初行之后"的旧逻辑
                 if (dataStartIdx < 0) dataStartIdx = invHeaderIdx + 1;
 
-                invData = [];
-                let convertCount = 0;
-
+                // 先收集通过基础校验（编码含数字、非"合计"、有名称）的候选行
+                const candidateRows = [];
                 for (let i = dataStartIdx; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r) continue;
                     const codeStr = String(r[codeCol] || '').trim();
                     // 防御性过滤：跳过"合计"行，以及编码列不含数字的行（大概率是表头文字误入，如"物料编码"本身）
                     if (r[codeCol] && codeStr !== '合计' && /\d/.test(codeStr) && r[nameCol]) {
-                        const specStr = r[specCol] || '';
-                        const specInfo = parseSpec(specStr);
-                        const rawUnit = r[unitCol] || '';
-                        const needConvert = specInfo && ['件','箱','包','捆'].includes(rawUnit);
-                        
-                        let initOrig = parseFloat(r[initCol]) || 0;
-                        let incomeOrig = parseFloat(r[incomeCol]) || 0;
-                        let balanceOrig = parseFloat(r[balanceCol]) || 0;
-                        let initConv = initOrig, incomeConv = incomeOrig, balanceConv = balanceOrig;
-                        let displayUnit = rawUnit;
-                        
-                        if (needConvert && specInfo) {
-                            initConv = initOrig * specInfo.ratio;
-                            incomeConv = incomeOrig * specInfo.ratio;
-                            balanceConv = balanceOrig * specInfo.ratio;
-                            displayUnit = specInfo.smallUnit;
-                            convertCount++;
-                        }
-                        
-                        invData.push({
-                            code: r[codeCol], name: r[nameCol], spec: specStr, category: r[catCol]||'',
-                            rawUnit: rawUnit, specInfo: specInfo, needConvert: needConvert,
-                            initOrig, incomeOrig, balanceOrig,
-                            init: initConv, income: incomeConv, balance: balanceConv, displayUnit,
-                            salesQty: 0, salesDetail: [],
-                            actual: null, diff: null, reason: '', action: ''
-                        });
+                        candidateRows.push(r);
                     }
                 }
-                
+
+                // 同一物料编码可能因仓库拆分（总仓/员工餐仓）出现多行，只取"总仓"的那一行；
+                // 若该物料压根没有总仓的行（只在其他仓库有存），则保留原有行，避免数据丢失。
+                const byCode = new Map();
+                candidateRows.forEach(r => {
+                    const codeStr = String(r[codeCol]).trim();
+                    if (!byCode.has(codeStr)) byCode.set(codeStr, []);
+                    byCode.get(codeStr).push(r);
+                });
+                const filteredRows = [];
+                byCode.forEach(group => {
+                    if (group.length === 1) { filteredRows.push(group[0]); return; }
+                    const zongCang = group.filter(r => String(r[warehouseCol] || '').includes('总仓'));
+                    if (zongCang.length > 0) {
+                        filteredRows.push(...zongCang);
+                    } else {
+                        filteredRows.push(...group);
+                    }
+                });
+
+                invData = [];
+                let convertCount = 0;
+
+                filteredRows.forEach(r => {
+                    const specStr = r[specCol] || '';
+                    const specInfo = parseSpec(specStr);
+                    const rawUnit = r[unitCol] || '';
+                    const needConvert = specInfo && ['件','箱','包','捆'].includes(rawUnit);
+
+                    let initOrig = parseFloat(r[initCol]) || 0;
+                    let incomeOrig = parseFloat(r[incomeCol]) || 0;
+                    let balanceOrig = parseFloat(r[balanceCol]) || 0;
+                    let initConv = initOrig, incomeConv = incomeOrig, balanceConv = balanceOrig;
+                    let displayUnit = rawUnit;
+
+                    if (needConvert && specInfo) {
+                        initConv = initOrig * specInfo.ratio;
+                        incomeConv = incomeOrig * specInfo.ratio;
+                        balanceConv = balanceOrig * specInfo.ratio;
+                        displayUnit = specInfo.smallUnit;
+                        convertCount++;
+                    }
+
+                    invData.push({
+                        code: r[codeCol], name: r[nameCol], spec: specStr, category: r[catCol]||'',
+                        rawUnit: rawUnit, specInfo: specInfo, needConvert: needConvert,
+                        initOrig, incomeOrig, balanceOrig,
+                        init: initConv, income: incomeConv, balance: balanceConv, displayUnit,
+                        salesQty: 0, salesDetail: [],
+                        actual: null, diff: null, reason: '', action: ''
+                    });
+                });
+
                 let infoHtml = `✅ 已解析 <b>${invData.length}</b> 条物料`;
                 if (convertCount > 0) infoHtml += `<br>🔄 其中 <b>${convertCount}</b> 条物料自动进行了单位换算`;
                 document.getElementById('invInfo').innerHTML = infoHtml;
