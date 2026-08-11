@@ -473,13 +473,33 @@
                         break;
                     }
                 }
-                
+
+                // 物料编码的典型格式：字母开头 + 横杠 + 数字（如 DH-00118 / YCL-00296），
+                // 也兼容纯数字编码。核心特征是"含数字"——表头文字（物料编码/名称…）不含数字。
+                const CODE_PATTERN = /^[A-Za-z]{0,10}-?\d{2,}/;
+
+                // 数据真正的起始行：不再死板依赖"期初"这两个字的表头定位（合并单元格/多级表头会导致定位失败），
+                // 而是直接扫描全表，找第一行"编码列"长得像真实物料编码的行，从那一行开始取数。
+                let dataStartIdx = -1;
+                for (let i = 0; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (r && r[codeCol] && CODE_PATTERN.test(String(r[codeCol]).trim())) {
+                        dataStartIdx = i;
+                        break;
+                    }
+                }
+                // 兜底：如果全表都没扫到像编码的行（比如编码规则完全不同），退回"期初行之后"的旧逻辑
+                if (dataStartIdx < 0) dataStartIdx = invHeaderIdx + 1;
+
                 invData = [];
                 let convertCount = 0;
-                
-                for (let i = invHeaderIdx + 1; i < rows.length; i++) {
+
+                for (let i = dataStartIdx; i < rows.length; i++) {
                     const r = rows[i];
-                    if (r[codeCol] && r[codeCol] !== '合计' && r[nameCol]) {
+                    if (!r) continue;
+                    const codeStr = String(r[codeCol] || '').trim();
+                    // 防御性过滤：跳过"合计"行，以及编码列不含数字的行（大概率是表头文字误入，如"物料编码"本身）
+                    if (r[codeCol] && codeStr !== '合计' && /\d/.test(codeStr) && r[nameCol]) {
                         const specStr = r[specCol] || '';
                         const specInfo = parseSpec(specStr);
                         const rawUnit = r[unitCol] || '';
