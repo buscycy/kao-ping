@@ -158,6 +158,12 @@
                 <div style="font-size:13px;color:#666;margin-bottom:4px;">输入每项实际盘点数量（已自动换算为最小单位），系统自动计算差异</div>
                 <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
                 <div style="font-size:12px;color:#999;margin-bottom:12px;" id="progressText">已完成 0/0</div>
+                <div style="position:relative;margin-bottom:12px;">
+                    <input type="text" id="invSearchInput" placeholder="🔍 搜索物料名称..." oninput="filterInvList(this.value)"
+                        style="width:100%;padding:9px 32px 9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+                    <span id="invSearchClear" onclick="clearInvSearch()" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999;font-size:16px;">✕</span>
+                </div>
+                <div id="invSearchEmpty" style="display:none;text-align:center;padding:20px;color:#999;font-size:13px;">没有找到匹配的物料</div>
                 <div id="invList"></div>
             </div>
         </div>
@@ -726,6 +732,31 @@
         
         updateProgress();
         if (!voiceApiOk) document.querySelectorAll('.vbtn.voice').forEach(b => b.textContent = '⌨');
+
+        const searchInput = document.getElementById('invSearchInput');
+        if (searchInput) { searchInput.value = ''; }
+        document.getElementById('invSearchEmpty').style.display = 'none';
+    }
+
+    function filterInvList(query) {
+        const q = query.trim();
+        document.getElementById('invSearchClear').style.display = q ? '' : 'none';
+        let visibleCount = 0;
+        invData.forEach((item, idx) => {
+            const el = document.getElementById(`item-${idx}`);
+            if (!el) return;
+            const match = !q || item.name.includes(q);
+            el.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+        document.getElementById('invSearchEmpty').style.display = (q && visibleCount === 0) ? '' : 'none';
+    }
+
+    function clearInvSearch() {
+        const searchInput = document.getElementById('invSearchInput');
+        searchInput.value = '';
+        filterInvList('');
+        searchInput.focus();
     }
 
     function updateActual(idx, val) {
