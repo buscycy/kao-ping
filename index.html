@@ -49,9 +49,6 @@
         .inv-item .actual-row input { flex:1; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:16px; text-align:center; }
         .inv-item .actual-row input:focus { border-color:#1a73e8; outline:none; }
         .inv-item .actual-row .unit-hint { font-size:12px; color:#666; white-space:nowrap; }
-        .inv-item .actual-row .vbtn { width:44px; height:44px; border-radius:50%; border:none; font-size:18px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-        .inv-item .actual-row .vbtn.voice { background:#1a73e8; color:#fff; }
-        .inv-item .actual-row .vbtn.voice.recording { background:#ea4335; animation:pulse 1s infinite; }
         .inv-item .diff-tag { padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; text-align:center; }
         .inv-item .diff-tag.pos { background:#e6f4ea; color:#137333; }
         .inv-item .diff-tag.neg { background:#fce8e6; color:#c5221f; }
@@ -75,15 +72,6 @@
         
         .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:12px 24px; border-radius:8px; z-index:1000; display:none; font-size:14px; }
         .toast.show { display:block; }
-        
-        .voice-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:500; display:none; align-items:center; justify-content:center; }
-        .voice-overlay.active { display:flex; }
-        .voice-dialog { background:#fff; border-radius:16px; padding:20px; width:90%; max-width:400px; max-height:80vh; overflow-y:auto; }
-        .voice-dialog h3 { font-size:16px; margin-bottom:12px; text-align:center; }
-        .voice-dialog .voice-input { width:100%; padding:12px; border:2px solid #1a73e8; border-radius:8px; font-size:16px; margin-bottom:12px; }
-        .voice-dialog .match-list { max-height:200px; overflow-y:auto; }
-        .voice-dialog .match-item { padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; }
-        .voice-dialog .match-item:hover { background:#e8f0fe; }
         
         .convert-info { background:#e8f0fe; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:13px; color:#1a73e8; }
         .convert-info b { color:#0d47a1; }
@@ -197,19 +185,6 @@
     <div class="nav-bar" id="navBar">
         <button class="btn btn-outline" id="btnPrev" onclick="prevStep()" style="display:none">上一步</button>
         <button class="btn btn-primary" id="btnNext" onclick="nextStep()">下一步</button>
-    </div>
-
-    <!-- Voice overlay -->
-    <div class="voice-overlay" id="voiceOverlay">
-        <div class="voice-dialog">
-            <h3 id="voiceTitle">🎤 语音输入</h3>
-            <input class="voice-input" id="voiceInput" placeholder="输入数字或语音识别..." oninput="onVoiceInput()">
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <button class="btn btn-primary" style="flex:1;" id="voiceRecBtn" onclick="toggleRecord()">🎤 开始录音</button>
-                <button class="btn btn-outline" onclick="closeVoice()">关闭</button>
-            </div>
-            <div class="match-list" id="voiceMatchList"></div>
-        </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -395,9 +370,6 @@
     let salesRaw = [];
     let unmatchedDishes = [];  // 销售数据中未匹配的菜品
     let currentStep = 1;
-    let currentVoiceIdx = null;
-    let recognition = null;
-    let voiceApiOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
     // ========== INIT ==========
     function init() {
@@ -724,14 +696,12 @@
                     <input type="number" step="0.01" id="actual-${idx}" placeholder="输入数量"
                         value="${item.actual!==null?item.actual:''}" oninput="updateActual(${idx},this.value)">
                     <span class="unit-hint">${item.displayUnit}</span>
-                    <button class="vbtn voice" id="vbtn-${idx}" onclick="openVoice(${idx})">🎤</button>
                 </div>
                 <div id="diff-${idx}" style="display:none;"></div>
             </div>`;
         }).join('');
         
         updateProgress();
-        if (!voiceApiOk) document.querySelectorAll('.vbtn.voice').forEach(b => b.textContent = '⌨');
 
         const searchInput = document.getElementById('invSearchInput');
         if (searchInput) { searchInput.value = ''; }
@@ -788,70 +758,6 @@
         const total = invData.length, done = invData.filter(i=>i.actual!==null).length;
         document.getElementById('progressFill').style.width = (total?done/total*100:0)+'%';
         document.getElementById('progressText').textContent = `已完成 ${done}/${total}`;
-    }
-
-    // ========== VOICE ==========
-    function openVoice(idx) {
-        currentVoiceIdx = idx;
-        document.getElementById('voiceOverlay').classList.add('active');
-        document.getElementById('voiceInput').value = '';
-        document.getElementById('voiceInput').focus();
-        document.getElementById('voiceRecBtn').textContent = '🎤 开始录音';
-        document.getElementById('voiceRecBtn').classList.remove('recording');
-        showVoiceMatches('');
-    }
-    function closeVoice() {
-        document.getElementById('voiceOverlay').classList.remove('active');
-        if (recognition) { try{recognition.stop();}catch(e){} }
-        currentVoiceIdx = null;
-    }
-    function toggleRecord() {
-        if (!voiceApiOk) { showToast('当前浏览器不支持语音，请手动输入'); return; }
-        const btn = document.getElementById('voiceRecBtn');
-        if (recognition && btn.classList.contains('recording')) {
-            recognition.stop(); btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; return;
-        }
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SR(); recognition.lang = 'zh-CN'; recognition.continuous = false;
-        btn.classList.add('recording'); btn.textContent = '⏺ 录音中...';
-        recognition.onresult = function(e) {
-            document.getElementById('voiceInput').value = e.results[0][0].transcript;
-            btn.classList.remove('recording'); btn.textContent = '🎤 开始录音';
-            processVoiceResult(e.results[0][0].transcript);
-        };
-        recognition.onerror = function() { btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; };
-        recognition.onend = function() { btn.classList.remove('recording'); btn.textContent = '🎤 开始录音'; };
-        recognition.start();
-    }
-    function onVoiceInput() { showVoiceMatches(document.getElementById('voiceInput').value); }
-    function showVoiceMatches(query) {
-        const list = document.getElementById('voiceMatchList');
-        if (!query) { list.innerHTML = '<div style="text-align:center;padding:10px;color:#999;font-size:13px;">输入数字直接录入</div>'; return; }
-        const num = parseFloat(query);
-        if (!isNaN(num) && query.trim() !== '') {
-            list.innerHTML = `<div class="match-item" onclick="setActual(${num})" style="background:#e8f0fe;font-weight:600;"><span>确认录入: ${num}</span><span>→</span></div>`;
-            return;
-        }
-        const matches = invData.filter(i => i.name.includes(query)).slice(0,10);
-        list.innerHTML = matches.map(item => {
-            const idx = invData.indexOf(item);
-            const theory = (item.init + item.income - item.salesQty).toFixed(1);
-            return `<div class="match-item" onclick="selectVoiceMatch(${idx})"><span>${item.name}</span><span style="font-size:12px;color:#666;">理论: ${theory}</span></div>`;
-        }).join('');
-    }
-    function setActual(num) {
-        if (currentVoiceIdx === null) return;
-        document.getElementById(`actual-${currentVoiceIdx}`).value = num;
-        updateActual(currentVoiceIdx, num); closeVoice(); showToast(`已录入: ${num}`);
-    }
-    function selectVoiceMatch(idx) {
-        currentVoiceIdx = idx;
-        document.getElementById(`item-${idx}`).scrollIntoView({behavior:'smooth', block:'center'});
-        closeVoice(); setTimeout(() => document.getElementById(`actual-${idx}`).focus(), 300);
-    }
-    function processVoiceResult(text) {
-        const num = parseFloat(text);
-        if (!isNaN(num)) setActual(num); else showVoiceMatches(text);
     }
 
     // ========== STEP 4: REVIEW ==========
