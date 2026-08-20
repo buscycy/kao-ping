@@ -137,6 +137,10 @@
                 <div class="card-title">⚠️ 未匹配菜品</div>
                 <div id="unmatchedList"></div>
             </div>
+            <div id="missingMatWarn" style="display:none;" class="card">
+                <div class="card-title">⚠️ 总表缺失物料</div>
+                <div id="missingMatList"></div>
+            </div>
         </div>
 
         <!-- Step 3: Input actual counts -->
@@ -539,13 +543,37 @@
                     });
                 });
 
-                let infoHtml = `✅ 已解析 <b>${invData.length}</b> 条物料`;
+                // 按门店考评范围自动筛选：总表往往覆盖全仓库/全公司物料，
+                // 但本店只需要考评"菜品→物料"映射里出现过的那些物料。
+                // currentMapping 在第1步选店时已加载(dish -> material)，取其值集合作为本店物料白名单。
+                const totalParsedCount = invData.length;
+                let missingMaterials = [];
+                if (selectedStore && currentMapping && Object.keys(currentMapping).length > 0) {
+                    const requiredMaterials = new Set(Object.values(currentMapping));
+                    invData = invData.filter(item => requiredMaterials.has(item.name));
+                    const foundNames = new Set(invData.map(item => item.name));
+                    missingMaterials = [...requiredMaterials].filter(name => !foundNames.has(name));
+                }
+
+                let infoHtml = `✅ 总表共解析 <b>${totalParsedCount}</b> 条物料`;
+                if (selectedStore) infoHtml += `，已按「${selectedStore}」的菜品映射筛选出 <b>${invData.length}</b> 条本店考评物料`;
                 if (convertCount > 0) infoHtml += `<br>🔄 其中 <b>${convertCount}</b> 条物料自动进行了单位换算`;
                 document.getElementById('invInfo').innerHTML = infoHtml;
-                
+
+                if (missingMaterials.length > 0) {
+                    document.getElementById('missingMatWarn').style.display = '';
+                    document.getElementById('missingMatList').innerHTML =
+                        `<div class="unmatched-warn">本店映射需要以下 ${missingMaterials.length} 个物料，但总表里没找到（可能是总表未覆盖/物料名称不一致）：<br>` +
+                        missingMaterials.slice(0, 20).map(name => `• ${name}`).join('<br>') +
+                        (missingMaterials.length > 20 ? `<br>... 等共${missingMaterials.length}个` : '') +
+                        `</div>`;
+                } else {
+                    document.getElementById('missingMatWarn').style.display = 'none';
+                }
+
                 if (convertCount > 0) renderConvertSummary();
                 else document.getElementById('convertSummary').style.display = 'none';
-                
+
                 calcSales();
                 showToast('物料表解析成功');
                 checkReady();
