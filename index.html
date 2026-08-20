@@ -218,7 +218,7 @@
         ],
         "卤校长老火锅(沙坪坝店)": [
             {"dish":"冷锅血","material":"鲜血"},{"dish":"乐堡","material":"乐堡"},{"dish":"国宾","material":"醇国宾"},
-            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花（件）"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花"},
             {"dish":"纯生","material":"重啤纯生"},{"dish":"农夫山泉","material":"农夫山泉"},
             {"dish":"品相网料","material":"网店底料500g(卤校长)"},{"dish":"王老吉","material":"凉茶王老吉"},
             {"dish":"网料","material":"网店底料500g(卤校长)"},{"dish":"听装可乐","material":"听装可乐"},{"dish":"收藏打卡听装可乐","material":"听装可乐"},
@@ -380,6 +380,9 @@
     // 结构: { 门店名: { canonical名称(=映射表里dish对应的material): [总表里可能出现的所有别名，含canonical本身] } }
     const MATERIAL_ALIASES = {
         "卤校长老火锅（观音桥店）": {
+            "脑花": ["脑花（件）", "脑花"]
+        },
+        "卤校长老火锅(沙坪坝店)": {
             "脑花": ["脑花（件）", "脑花"]
         }
     };
