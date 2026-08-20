@@ -535,7 +535,11 @@
                     const specStr = r[specCol] || '';
                     const specInfo = parseSpec(specStr);
                     const rawUnit = r[unitCol] || '';
-                    const needConvert = specInfo && ['件','箱','包','捆'].includes(rawUnit);
+                    // 只有总表里这一行的单位真的是规格里的"大单位"(如"件")才需要换算成小单位。
+                    // 之前用['件','箱','包','捆']这个粗糙的列表判断，导致总表本身单位已经是"包"
+                    // (跟规格里的小单位同名，比如"火锅调料包60g: 60g*100包/件"，总表单位列已经是"包")
+                    // 时也被当成"件"多乘了一次比例，数量放大100倍。改成精确匹配规格解析出的大单位。
+                    const needConvert = specInfo && String(rawUnit).trim() === specInfo.bigUnit;
 
                     let initOrig = parseFloat(r[initCol]) || 0;
                     let incomeOrig = parseFloat(r[incomeCol]) || 0;
