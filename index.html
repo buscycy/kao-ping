@@ -198,7 +198,7 @@
     const ALL_STORES = {
         "卤校长老火锅（观音桥店）": [
             {"dish":"冷锅血","material":"鲜血"},{"dish":"乐堡","material":"乐堡"},{"dish":"国宾","material":"醇国宾"},
-            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花（件）"},{"dish":"纯生","material":"重啤纯生"},
+            {"dish":"红糖糍粑","material":"红糖糍粑"},{"dish":"脑花","material":"脑花"},{"dish":"纯生","material":"重啤纯生"},
             {"dish":"农夫山泉","material":"农夫山泉"},{"dish":"听装可乐","material":"可口可乐（330ml）"},{"dish":"王老吉","material":"凉茶王老吉"},
             {"dish":"唯怡","material":"唯怡245ml"},{"dish":"大窑橙诺","material":"大窑橙汁（480ml/瓶）"},{"dish":"北冰洋","material":"北冰洋"},
             {"dish":"听装雪碧","material":"雪碧（330ml）"},{"dish":"大唯怡","material":"唯怡E90"},{"dish":"乐堡Pro","material":"乐堡PRO"},
@@ -206,7 +206,13 @@
             {"dish":"乐堡精酿","material":"乐堡精酿1L"},{"dish":"小郎酒","material":"郎酒100ml"},{"dish":"可乐（收藏打卡）","material":"可口可乐（330ml）"},
             {"dish":"国宾精酿","material":"国宾精酿（重庆）"},{"dish":"天山鲜果庄园橙味","material":"天山鲜果庄园"},
             {"dish":"天山鲜果庄园水蜜桃","material":"天山鲜果庄园"},{"dish":"光明酸奶458ml","material":"光明酸奶look"},
-            {"dish":"雪碧（收藏打卡）","material":"雪碧（330ml）"}
+            {"dish":"雪碧（收藏打卡）","material":"雪碧（330ml）"},
+            {"dish":"自制午餐肉","material":"精品午餐肉","ratio":0.5},
+            {"dish":"红汤小锅","material":"火锅调料包60g"},
+            {"dish":"红汤大锅","material":"火锅调料包80g"},
+            {"dish":"鸳鸯番茄锅","material":"火锅调料包80g","ratio":0.5},
+            {"dish":"鸳鸯菌汤锅","material":"火锅调料包80g","ratio":0.5},
+            {"dish":"鸳鸯三鲜锅","material":"火锅调料包80g","ratio":0.5}
         ],
         "卤校长老火锅(沙坪坝店)": [
             {"dish":"冷锅血","material":"鲜血"},{"dish":"乐堡","material":"乐堡"},{"dish":"国宾","material":"醇国宾"},
@@ -364,6 +370,16 @@
             {"dish":"大颗粒午餐肉","material":"火腿猪肉罐头"},{"dish":"广式甜香肠","material":"广味小香肠"},
             {"dish":"南川方竹笋","material":"笋片"}
         ]
+    };
+
+    // ========== 物料别名合并 ==========
+    // 同一实物因新旧编码/换代命名不一致，在总表里可能拆成不同名称的多行（如"脑花（件）"旧编码 vs "脑花"新编码）。
+    // 需在按门店筛选白名单之前，把这些别名行按 canonical 名称加总合并成一行，再参与筛选与销售匹配。
+    // 结构: { 门店名: { canonical名称(=映射表里dish对应的material): [总表里可能出现的所有别名，含canonical本身] } }
+    const MATERIAL_ALIASES = {
+        "卤校长老火锅（观音桥店）": {
+            "脑花": ["脑花（件）", "脑花"]
+        }
     };
 
     // ========== DATA ==========
@@ -543,6 +559,40 @@
                     });
                 });
 
+                // 物料别名合并：新旧编码/命名不一致但实为同一实物，按 canonical 名称加总合并成一行
+                // （在门店白名单筛选之前做，这样合并后的 canonical 名称才能命中菜品映射里的 material）
+                const aliasConfig = selectedStore && MATERIAL_ALIASES[selectedStore];
+                if (aliasConfig) {
+                    Object.keys(aliasConfig).forEach(canonical => {
+                        const aliasNames = aliasConfig[canonical];
+                        const matched = invData.filter(item => aliasNames.includes(item.name));
+                        if (matched.length > 1) {
+                            const merged = {
+                                code: matched.map(m => m.code).join('+'),
+                                name: canonical,
+                                spec: matched.map(m => `${m.name}:${m.spec||''}`).join(' / '),
+                                category: matched[0].category,
+                                rawUnit: matched[0].displayUnit, specInfo: null, needConvert: false,
+                                initOrig: matched.reduce((s,m)=>s+m.initOrig,0),
+                                incomeOrig: matched.reduce((s,m)=>s+m.incomeOrig,0),
+                                balanceOrig: matched.reduce((s,m)=>s+m.balanceOrig,0),
+                                init: matched.reduce((s,m)=>s+m.init,0),
+                                income: matched.reduce((s,m)=>s+m.income,0),
+                                balance: matched.reduce((s,m)=>s+m.balance,0),
+                                displayUnit: matched[0].displayUnit,
+                                salesQty: 0, salesDetail: [],
+                                actual: null, diff: null, reason: '', action: '',
+                                mergedFrom: matched.map(m => `${m.name}(${m.code})`)
+                            };
+                            invData = invData.filter(item => !aliasNames.includes(item.name));
+                            invData.push(merged);
+                        } else if (matched.length === 1 && matched[0].name !== canonical) {
+                            // 总表里只出现了别名中的一个（比如只有旧编码），直接改名成canonical，保证能命中白名单
+                            matched[0].name = canonical;
+                        }
+                    });
+                }
+
                 // 按门店考评范围自动筛选：总表往往覆盖全仓库/全公司物料，
                 // 但本店只需要考评"菜品→物料"映射里出现过的那些物料。
                 // currentMapping 在第1步选店时已加载(dish -> material)，取其值集合作为本店物料白名单。
@@ -703,13 +753,14 @@
             }
             
             let convertTag = item.needConvert ? `<span class="unit-convert">已换算 1${item.specInfo.bigUnit}=${item.specInfo.ratio}${item.specInfo.smallUnit}</span>` : '';
-            
+            let mergedTag = item.mergedFrom ? `<span class="unit-convert" style="background:#fce8e6;color:#c5221f;">合并自: ${item.mergedFrom.join(' + ')}</span>` : '';
+
             let initDisplay = item.needConvert ? `${item.init.toFixed(1)}<div class="sub">(${item.initOrig}${item.rawUnit})</div>` : `${item.init}`;
             let incomeDisplay = item.needConvert ? `${item.income.toFixed(1)}<div class="sub">(${item.incomeOrig}${item.rawUnit})</div>` : `${item.income}`;
-            
+
             return `<div class="inv-item" id="item-${idx}">
                 <div class="name-row">
-                    <span class="name">${idx+1}. ${item.name} ${convertTag}</span>
+                    <span class="name">${idx+1}. ${item.name} ${convertTag}${mergedTag}</span>
                     <span class="cat-tag" style="background:${catStyle.split(';')[0]};${catStyle.split(';')[1]||''}">${item.category}</span>
                 </div>
                 ${salesDetailStr ? `<div class="sales-info">销售明细: ${salesDetailStr} = <b>${item.salesQty}${item.displayUnit}</b></div>` : '<div class="sales-info" style="color:#ea4335;">⚠️ 无匹配销售数据</div>'}
