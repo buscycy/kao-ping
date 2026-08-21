@@ -403,6 +403,17 @@
         }
     };
 
+    // 物料名比对统一归一化：总表/映射表/图片转录里全角括号（）与半角括号()经常混用，
+    // 人工转录/OCR 时肉眼很难分辨，一旦写错就会导致该物料的出入库/销售永远匹配不上（如"雪花金冠"事故）。
+    // 所有涉及物料名相等性判断的地方都必须走这个函数，不能再用裸的 === / includes()。
+    // 仅用于比较，不改变实际存储/展示用的原始名称。
+    function normName(s) {
+        return String(s || '')
+            .replace(/[（(]/g, '(')
+            .replace(/[）)]/g, ')')
+            .trim();
+    }
+
     // ========== DATA ==========
     let selectedStore = '';
     let currentMapping = {};  // {菜品名: 系统物料名}
@@ -590,7 +601,7 @@
                 if (aliasConfig) {
                     Object.keys(aliasConfig).forEach(canonical => {
                         const aliasNames = aliasConfig[canonical];
-                        const matched = invData.filter(item => aliasNames.includes(item.name));
+                        const matched = invData.filter(item => aliasNames.some(a => normName(a) === normName(item.name)));
                         if (matched.length > 1) {
                             const merged = {
                                 code: matched.map(m => m.code).join('+'),
@@ -609,7 +620,7 @@
                                 actual: null, diff: null, reason: '', action: '',
                                 mergedFrom: matched.map(m => `${m.name}(${m.code})`)
                             };
-                            invData = invData.filter(item => !aliasNames.includes(item.name));
+                            invData = invData.filter(item => !aliasNames.some(a => normName(a) === normName(item.name)));
                             invData.push(merged);
                         } else if (matched.length === 1 && matched[0].name !== canonical) {
                             // 总表里只出现了别名中的一个（比如只有旧编码），直接改名成canonical，保证能命中白名单
@@ -625,9 +636,10 @@
                 let missingMaterials = [];
                 if (selectedStore && currentMapping && Object.keys(currentMapping).length > 0) {
                     const requiredMaterials = new Set(Object.values(currentMapping));
-                    invData = invData.filter(item => requiredMaterials.has(item.name));
-                    const foundNames = new Set(invData.map(item => item.name));
-                    missingMaterials = [...requiredMaterials].filter(name => !foundNames.has(name));
+                    const requiredNorm = new Set([...requiredMaterials].map(normName));
+                    invData = invData.filter(item => requiredNorm.has(normName(item.name)));
+                    const foundNamesNorm = new Set(invData.map(item => normName(item.name)));
+                    missingMaterials = [...requiredMaterials].filter(name => !foundNamesNorm.has(normName(name)));
                 }
 
                 let infoHtml = `✅ 总表共解析 <b>${totalParsedCount}</b> 条物料`;
@@ -723,23 +735,25 @@
         salesRaw.forEach(s => {
             const materialName = currentMapping[s.name];
             if (materialName) {
+                const key = normName(materialName);
                 const ratio = currentRatio[s.name] || 1;
                 const consumed = s.qty * ratio;
-                if (!materialSales[materialName]) {
-                    materialSales[materialName] = 0;
-                    materialDetail[materialName] = [];
+                if (!materialSales[key]) {
+                    materialSales[key] = 0;
+                    materialDetail[key] = [];
                 }
-                materialSales[materialName] += consumed;
-                materialDetail[materialName].push({name: s.name, qty: s.qty, ratio: ratio, consumed: consumed});
+                materialSales[key] += consumed;
+                materialDetail[key].push({name: s.name, qty: s.qty, ratio: ratio, consumed: consumed});
             } else {
                 unmatchedDishes.push({name: s.name, qty: s.qty});
             }
         });
-        
+
         invData.forEach(item => {
-            if (materialSales[item.name]) {
-                item.salesQty = materialSales[item.name];
-                item.salesDetail = materialDetail[item.name] || [];
+            const key = normName(item.name);
+            if (materialSales[key]) {
+                item.salesQty = materialSales[key];
+                item.salesDetail = materialDetail[key] || [];
             }
         });
         
