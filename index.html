@@ -421,6 +421,20 @@
             .trim();
     }
 
+    // 菜品名模糊匹配兜底：官方映射表里的促销/别名菜品（如"0元可乐（打卡收藏）"）经常跟
+    // 实际销售报表里的文字有空格/括号/顺序上的细微出入（如"打卡收藏"写成"收藏打卡"）。
+    // 精确匹配优先（不改变现有行为），只有精确匹配不到时，才退化成"去空格/去括号/字符不分顺序"
+    // 的模糊匹配——把文字拆成字符集合比较，只要包含的字一样就算同一个菜品。
+    // 仅在这一层兜底使用，避免把两个真的不同名的菜品误合并成一个物料。
+    function fuzzyDishKey(s) {
+        return String(s || '')
+            .replace(/\s+/g, '')
+            .replace(/[（）()]/g, '')
+            .split('')
+            .sort()
+            .join('');
+    }
+
     // ========== DATA ==========
     let selectedStore = '';
     let currentMapping = {};  // {菜品名: 系统物料名}
@@ -732,18 +746,43 @@
 
     function calcSales() {
         if (invData.length === 0 || salesRaw.length === 0) return;
-        
+
         invData.forEach(item => { item.salesQty = 0; item.salesDetail = []; });
         unmatchedDishes = [];
-        
+
         const materialSales = {};
         const materialDetail = {};
-        
+
+        // 模糊匹配索引：只有精确匹配（currentMapping[s.name]）失败时才会用到。
+        // key=fuzzyDishKey(菜品名) -> {material, ratio, dishes:[映射表里对应的原始菜品名,...]}
+        // 如果同一个模糊key对应两个不同的物料（真的是两个不同菜品撞了字），标记为冲突，不瞎猜。
+        const fuzzyIndex = {};
+        Object.keys(currentMapping).forEach(dish => {
+            const fk = fuzzyDishKey(dish);
+            if (!fk) return;
+            if (!fuzzyIndex[fk]) {
+                fuzzyIndex[fk] = { material: currentMapping[dish], ratio: currentRatio[dish] || 1, dishes: [dish], conflict: false };
+            } else if (normName(fuzzyIndex[fk].material) !== normName(currentMapping[dish])) {
+                fuzzyIndex[fk].conflict = true;
+                fuzzyIndex[fk].dishes.push(dish);
+            } else {
+                fuzzyIndex[fk].dishes.push(dish);
+            }
+        });
+
         salesRaw.forEach(s => {
-            const materialName = currentMapping[s.name];
+            let materialName = currentMapping[s.name];
+            let ratio = currentRatio[s.name] || 1;
+            if (!materialName) {
+                const fk = fuzzyDishKey(s.name);
+                const hit = fk && fuzzyIndex[fk];
+                if (hit && !hit.conflict) {
+                    materialName = hit.material;
+                    ratio = hit.ratio;
+                }
+            }
             if (materialName) {
                 const key = normName(materialName);
-                const ratio = currentRatio[s.name] || 1;
                 const consumed = s.qty * ratio;
                 if (!materialSales[key]) {
                     materialSales[key] = 0;
